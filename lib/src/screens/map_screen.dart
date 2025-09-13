@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:hide_and_map/main.dart';
 
 import '../models/circle_model.dart';
@@ -25,6 +26,12 @@ class _MapScreenState extends State<MapScreen> {
     target: LatLng(49.4480, 11.0780), // Nuremburg default
     zoom: 13,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    Permission.location.request();
+  }
 
   // Update the UI when circle changes
   void _updateCircleCenter(LatLng center) {
@@ -86,6 +93,7 @@ class _MapScreenState extends State<MapScreen> {
             initialCameraPosition: _initialCamera,
             style: mapStyle,
             mapType: MapType.normal,
+            myLocationEnabled: true,
             myLocationButtonEnabled: true,
             onMapCreated: (GoogleMapController controller) {
               _controller.complete(controller);
@@ -97,45 +105,6 @@ class _MapScreenState extends State<MapScreen> {
             circles: circles,
             markers: markers,
             // Polylines and other overlays would also scale automatically.
-          ),
-
-          // Positioned control at bottom for radius input
-          Positioned(
-            left: 12,
-            right: 12,
-            bottom: 20,
-            child: Card(
-              elevation: 6,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RadiusInput(
-                      initialKm: _circle.radiusMeters / 1000,
-                      onChangedKm: (km) => _updateCircleRadiusKm(km),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _circle.center == null
-                                ? 'Tap the map to set circle center'
-                                : 'Center: ${_circle.center!.latitude.toStringAsFixed(5)}, ${_circle.center!.longitude.toStringAsFixed(5)}',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text('${(_circle.radiusMeters / 1000).toStringAsFixed(2)} km'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ),
         ],
       ),
