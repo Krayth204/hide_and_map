@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:hide_and_map/main.dart';
 
 import '../models/circle_model.dart';
 import '../widgets/radius_input.dart';
@@ -21,8 +22,8 @@ class _MapScreenState extends State<MapScreen> {
   final CircleModel _circle = CircleModel.empty();
 
   static const CameraPosition _initialCamera = CameraPosition(
-    target: LatLng(37.7749, -122.4194), // San Francisco default
-    zoom: 12,
+    target: LatLng(49.4480, 11.0780), // Nuremburg default
+    zoom: 13,
   );
 
   // Update the UI when circle changes
@@ -83,6 +84,7 @@ class _MapScreenState extends State<MapScreen> {
         children: [
           GoogleMap(
             initialCameraPosition: _initialCamera,
+            style: mapStyle,
             mapType: MapType.normal,
             myLocationButtonEnabled: true,
             onMapCreated: (GoogleMapController controller) {
