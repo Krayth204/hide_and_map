@@ -1,4 +1,4 @@
-package com.example.hide_and_map
+package com.krayth.hide_and_map
 
 import io.flutter.embedding.android.FlutterActivity
 

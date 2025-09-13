@@ -3,10 +3,11 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.secrets_gradle_plugin")
 }
 
 android {
-    namespace = "com.example.hide_and_map"
+    namespace = "com.krayth.hide_and_map"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,17 +21,13 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.hide_and_map"
+        applicationId = "com.krayth.hide_and_map"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        // Kotlin DSL: get property from local.properties if present
-        val mapsKey: String? = (project.findProperty("MAPS_API_KEY") as String?) ?: System.getenv("MAPS_API_KEY")
-        manifestPlaceholders["com.google.android.geo.API_KEY"] = mapsKey ?: ""
     }
 
     buildTypes {
