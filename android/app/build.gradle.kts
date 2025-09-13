@@ -28,6 +28,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Kotlin DSL: get property from local.properties if present
+        val mapsKey: String? = (project.findProperty("MAPS_API_KEY") as String?) ?: System.getenv("MAPS_API_KEY")
+        manifestPlaceholders["com.google.android.geo.API_KEY"] = mapsKey ?: ""
     }
 
     buildTypes {

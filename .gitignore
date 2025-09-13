@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local API key file (do not commit)
+lib/config/google_maps_api_key.dart
+/ios/Runner/Secrets.plist
+web/secret_config.json

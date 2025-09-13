@@ -1,0 +1,6 @@
+/// Copy this file to `google_maps_api_key.dart` and replace the string with
+/// your API key. The real file is gitignored so your key won't be committed.
+
+const String googleMapsApiKey = 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
+
+// Example usage: import 'package:your_app/src/config/google_maps_api_key.dart';
