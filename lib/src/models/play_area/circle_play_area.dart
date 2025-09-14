@@ -23,4 +23,7 @@ class CirclePlayArea extends PlayArea {
     }
     return points;
   }
+
+  @override
+  LatLng getCenter() => center;
 }

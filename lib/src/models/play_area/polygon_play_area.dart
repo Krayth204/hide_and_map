@@ -9,4 +9,15 @@ class PolygonPlayArea extends PlayArea {
 
   @override
   List<LatLng> getBoundary() => vertices;
+
+  @override
+  LatLng getCenter() {
+    double sumLat = 0;
+    double sumLng = 0;
+    for (var v in vertices) {
+      sumLat += v.latitude;
+      sumLng += v.longitude;
+    }
+    return LatLng(sumLat / vertices.length, sumLng / vertices.length);
+  }
 }

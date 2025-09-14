@@ -6,6 +6,9 @@ abstract class PlayArea {
   /// Returns a list of LatLng points that form the *outer boundary* of the area
   List<LatLng> getBoundary();
 
+  /// Returns the center of the play area
+  LatLng getCenter();
+
   /// Build overlay polygons with translucent map cover and hole
   /// Returns a set of polygons ready to pass into GoogleMap.polygons
   static Set<Polygon> buildOverlay(PlayArea? playArea) {

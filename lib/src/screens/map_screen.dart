@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -23,7 +24,9 @@ class _MapScreenState extends State<MapScreen> {
   );
 
   // Variable to store play area
-  PlayArea? playArea;
+  PlayArea? _playArea;
+
+  Set<Polygon> _polygons = HashSet<Polygon>();
 
   @override
   void initState() {
@@ -31,7 +34,8 @@ class _MapScreenState extends State<MapScreen> {
     Permission.location.request();
 
     // Example: circle play area
-    playArea = CirclePlayArea(const LatLng(49.4480, 11.0780), 1000000);
+    _playArea = CirclePlayArea(const LatLng(49.4480, 11.0780), 1000000);
+    _polygons = PlayArea.buildOverlay(_playArea);
 
     // Example: polygon play area
     // playArea = PolygonPlayArea([
@@ -53,7 +57,7 @@ class _MapScreenState extends State<MapScreen> {
         mapType: MapType.normal,
         myLocationEnabled: true,
         myLocationButtonEnabled: true,
-        polygons: PlayArea.buildOverlay(playArea),
+        polygons: _polygons,
         onMapCreated: (GoogleMapController controller) {
           _controller.complete(controller);
         },
