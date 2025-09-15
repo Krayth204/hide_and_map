@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/play_area/play_area_selector_controller.dart';
+import '../../models/play_area/play_area_selector_controller.dart';
 
 class PlayAreaSelector extends StatefulWidget {
   final PlayAreaSelectorController controller;
@@ -43,7 +43,7 @@ class _PlayAreaSelectorState extends State<PlayAreaSelector> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: AnimatedBuilder(
@@ -52,6 +52,13 @@ class _PlayAreaSelectorState extends State<PlayAreaSelector> {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                const Text(
+                  'Select Play Zone',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text('Tap map to set points. Drag marker to adjust.'),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
