@@ -58,6 +58,7 @@ class _MapScreenState extends State<MapScreen> {
                 style: mapStyle,
                 mapType: MapType.normal,
                 webCameraControlEnabled: false,
+                zoomControlsEnabled: false,
                 myLocationEnabled: true,
                 myLocationButtonEnabled: true,
                 polygons:
