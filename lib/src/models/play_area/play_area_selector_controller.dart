@@ -25,7 +25,7 @@ class PlayAreaSelectorController extends ChangeNotifier {
           points: polygonPoints,
           strokeColor: Colors.green,
           strokeWidth: 2,
-          fillColor: Colors.green.withOpacity(0.2),
+          fillColor: Colors.green.withAlpha(51), // 20%
         ),
       };
     }
@@ -41,7 +41,7 @@ class PlayAreaSelectorController extends ChangeNotifier {
           radius: circleRadius,
           strokeColor: Colors.blue,
           strokeWidth: 2,
-          fillColor: Colors.blue.withOpacity(0.2),
+          fillColor: Colors.blue.withAlpha(51), // 20%
         ),
       };
     }

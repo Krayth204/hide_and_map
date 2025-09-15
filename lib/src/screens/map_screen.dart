@@ -9,6 +9,7 @@ import '../models/play_area/play_area.dart';
 import '../models/play_area/play_area_selector_controller.dart';
 import '../widgets/play_area/play_area_selector.dart';
 
+import '../models/extra_shape.dart';
 import '../models/add_shape/add_circle_controller.dart';
 import '../models/add_shape/add_line_controller.dart';
 import '../models/add_shape/add_polygon_controller.dart';
@@ -36,10 +37,9 @@ class _MapScreenState extends State<MapScreen> {
   PlayArea? _playArea;
   Set<Polygon> _polygons = HashSet<Polygon>();
 
-  Set<Polygon> _extraPolygons = HashSet();
-  Set<Polyline> _extraPolylines = HashSet();
-  Set<Circle> _extraCircles = HashSet();
   Set<Marker> _extraMarkers = HashSet();
+  List<ExtraShape> _extraShapes = [];
+  String? _editingShapeId;
 
   late final PlayAreaSelectorController _selectorController;
 
@@ -68,6 +68,7 @@ class _MapScreenState extends State<MapScreen> {
     _activeCircleController = null;
     _activeLineController = null;
     _activePolygonController = null;
+    _editingShapeId = null;
   }
 
   void _openAddCircle() {
@@ -107,6 +108,75 @@ class _MapScreenState extends State<MapScreen> {
         _activePolygonController!.onMapTap(point);
         return;
       }
+    }
+  }
+
+  void _onShapeTapped(String id) {
+    final shape = _extraShapes.firstWhere((s) => s.id == id);
+
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Edit'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _editShape(shape);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete),
+                title: const Text('Remove'),
+                onTap: () {
+                  setState(() {
+                    _extraShapes.removeWhere((s) => s.id == id);
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _editShape(ExtraShape shape) {
+    if (shape.type == ShapeType.circle &&
+        shape.center != null &&
+        shape.radius != null) {
+      _editingShapeId = shape.id;
+
+      _activeCircleController = AddCircleController()
+        ..center = shape.center!
+        ..radius = shape.radius!
+        ..edit = true;
+
+      setState(() {});
+    }
+
+    if (shape.type == ShapeType.polygon && shape.points != null) {
+      _editingShapeId = shape.id;
+
+      _activePolygonController = AddPolygonController()
+        ..points = List.from(shape.points!)
+        ..edit = true;
+
+      setState(() {});
+    }
+
+    if (shape.type == ShapeType.line && shape.points != null) {
+      _editingShapeId = shape.id;
+
+      _activeLineController = AddLineController()
+        ..points = List.from(shape.points!)
+        ..edit = true;
+
+      setState(() {});
     }
   }
 
@@ -167,20 +237,51 @@ class _MapScreenState extends State<MapScreen> {
             builder: (_, __) {
               final polygonsToShow = <Polygon>{};
               polygonsToShow.addAll(_polygons); // confirmed playArea overlay
-              polygonsToShow.addAll(_extraPolygons); // extra shapes
-
+              polygonsToShow.addAll(
+                _extraShapes
+                    .where(
+                      (s) => s.type == ShapeType.polygon && s.points != null,
+                    )
+                    .map(
+                      (s) => Polygon(
+                        polygonId: PolygonId(s.id),
+                        points: s.points!,
+                        strokeColor: Colors.blue.shade900,
+                        strokeWidth: 2,
+                        fillColor: Colors.blue.withAlpha(115),
+                        consumeTapEvents: _isEditable(),
+                        onTap: () =>
+                            _isEditable() ? _onShapeTapped(s.id) : null,
+                      ),
+                    )
+                    .toSet(),
+              ); // extra shapes
               if (_activePolygonController != null) {
                 polygonsToShow.addAll(
                   _activePolygonController!.getPreviewPolygons(),
                 );
               }
-
               if (_playArea == null) {
                 polygonsToShow.addAll(_selectorController.getPolygons());
               }
 
               final polylinesToShow = <Polyline>{};
-              polylinesToShow.addAll(_extraPolylines);
+              polylinesToShow.addAll(
+                _extraShapes
+                    .where((s) => s.type == ShapeType.line && s.points != null)
+                    .map(
+                      (s) => Polyline(
+                        polylineId: PolylineId(s.id),
+                        points: s.points!,
+                        color: Colors.blue.shade900,
+                        width: 4,
+                        consumeTapEvents: _isEditable(),
+                        onTap: () =>
+                            _isEditable() ? _onShapeTapped(s.id) : null,
+                      ),
+                    )
+                    .toSet(),
+              );
               if (_activeLineController != null) {
                 polylinesToShow.addAll(
                   _activeLineController!.getPreviewPolylines(),
@@ -188,13 +289,34 @@ class _MapScreenState extends State<MapScreen> {
               }
 
               final circlesToShow = <Circle>{};
-              circlesToShow.addAll(_extraCircles);
+              circlesToShow.addAll(
+                _extraShapes
+                    .where(
+                      (s) =>
+                          s.type == ShapeType.circle &&
+                          s.center != null &&
+                          s.radius != null,
+                    )
+                    .map(
+                      (s) => Circle(
+                        circleId: CircleId(s.id),
+                        center: s.center!,
+                        radius: s.radius!,
+                        strokeColor: Colors.blue.shade900,
+                        strokeWidth: 2,
+                        fillColor: Colors.blue.withAlpha(115),
+                        consumeTapEvents: _isEditable(),
+                        onTap: () =>
+                            _isEditable() ? _onShapeTapped(s.id) : null,
+                      ),
+                    )
+                    .toSet(),
+              );
               if (_activeCircleController != null) {
                 circlesToShow.addAll(
                   _activeCircleController!.getPreviewCircles(),
                 );
               }
-
               if (_playArea == null) {
                 circlesToShow.addAll(_selectorController.getCircles());
               }
@@ -261,24 +383,7 @@ class _MapScreenState extends State<MapScreen> {
                       setState(() => _closeActiveAdd());
                     },
                     onConfirm: () {
-                      final c = _activeCircleController!;
-                      if (c.center != null) {
-                        final id = CircleId(
-                          'extra_circle_${DateTime.now().millisecondsSinceEpoch}',
-                        );
-                        final circle = Circle(
-                          circleId: id,
-                          center: c.center!,
-                          radius: c.radius,
-                          strokeColor: Colors.blue.shade900,
-                          strokeWidth: 2,
-                          fillColor: Colors.blue.withOpacity(0.45),
-                        );
-                        setState(() {
-                          _extraCircles = Set.from(_extraCircles)..add(circle);
-                          _closeActiveAdd();
-                        });
-                      }
+                      _onConfirmCircle(_activeCircleController!);
                     },
                   ),
                 ),
@@ -298,22 +403,7 @@ class _MapScreenState extends State<MapScreen> {
                       setState(() => _closeActiveAdd());
                     },
                     onConfirm: () {
-                      final c = _activeLineController!;
-                      if (c.points.length >= 2) {
-                        final id = PolylineId(
-                          'extra_line_${DateTime.now().millisecondsSinceEpoch}',
-                        );
-                        final pl = Polyline(
-                          polylineId: id,
-                          points: List.from(c.points),
-                          color: Colors.blue.shade900,
-                          width: 4,
-                        );
-                        setState(() {
-                          _extraPolylines = Set.from(_extraPolylines)..add(pl);
-                          _closeActiveAdd();
-                        });
-                      }
+                      _onConfirmLine(_activeLineController!);
                     },
                   ),
                 ),
@@ -333,23 +423,7 @@ class _MapScreenState extends State<MapScreen> {
                       setState(() => _closeActiveAdd());
                     },
                     onConfirm: () {
-                      final c = _activePolygonController!;
-                      if (c.points.length >= 3) {
-                        final id = PolygonId(
-                          'extra_polygon_${DateTime.now().millisecondsSinceEpoch}',
-                        );
-                        final pg = Polygon(
-                          polygonId: id,
-                          points: List.from(c.points),
-                          strokeColor: Colors.blue.shade900,
-                          strokeWidth: 2,
-                          fillColor: Colors.blue.withOpacity(0.45),
-                        );
-                        setState(() {
-                          _extraPolygons = Set.from(_extraPolygons)..add(pg);
-                          _closeActiveAdd();
-                        });
-                      }
+                      _onConfirmPolygon(_activePolygonController!);
                     },
                   ),
                 ),
@@ -358,5 +432,69 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ),
     );
+  }
+
+  bool _isEditable() {
+    return _playArea != null &&
+        _activeCircleController == null &&
+        _activeLineController == null &&
+        _activePolygonController == null;
+  }
+
+  void _onConfirmCircle(AddCircleController c) {
+    if (c.center == null || c.radius == 0) return;
+    final id =
+        _editingShapeId ??
+        'extra_circle_${DateTime.now().millisecondsSinceEpoch}';
+    final shape = ExtraShape.circle(id, c.center!, c.radius);
+
+    setState(() {
+      if (_editingShapeId != null) {
+        final index = _extraShapes.indexWhere((s) => s.id == _editingShapeId);
+        if (index != -1) _extraShapes[index] = shape;
+        _editingShapeId = null;
+      } else {
+        _extraShapes.add(shape);
+      }
+      _closeActiveAdd();
+    });
+  }
+
+  void _onConfirmLine(AddLineController c) {
+    if (c.points.length < 2) return;
+    final id =
+        _editingShapeId ??
+        'extra_line_${DateTime.now().millisecondsSinceEpoch}';
+    final shape = ExtraShape.line(id, List.from(c.points));
+
+    setState(() {
+      if (_editingShapeId != null) {
+        final index = _extraShapes.indexWhere((s) => s.id == _editingShapeId);
+        if (index != -1) _extraShapes[index] = shape;
+        _editingShapeId = null;
+      } else {
+        _extraShapes.add(shape);
+      }
+      _closeActiveAdd();
+    });
+  }
+
+  void _onConfirmPolygon(AddPolygonController c) {
+    if (c.points.length < 3) return;
+    final id =
+        _editingShapeId ??
+        'extra_polygon_${DateTime.now().millisecondsSinceEpoch}';
+    final shape = ExtraShape.polygon(id, List.from(c.points));
+
+    setState(() {
+      if (_editingShapeId != null) {
+        final index = _extraShapes.indexWhere((s) => s.id == _editingShapeId);
+        if (index != -1) _extraShapes[index] = shape;
+        _editingShapeId = null;
+      } else {
+        _extraShapes.add(shape);
+      }
+      _closeActiveAdd();
+    });
   }
 }

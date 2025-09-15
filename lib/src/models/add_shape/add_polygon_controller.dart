@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class AddPolygonController extends ChangeNotifier {
-  final List<LatLng> points = [];
+  List<LatLng> points = [];
+  bool edit = false;
 
   void onMapTap(LatLng p) {
     points.add(p);
@@ -29,7 +30,7 @@ class AddPolygonController extends ChangeNotifier {
         points: List.from(points),
         strokeColor: Colors.blue.shade900,
         strokeWidth: 2,
-        fillColor: Colors.blue.withOpacity(0.45),
+        fillColor: Colors.blue.withAlpha(115), // 45%
       )
     };
   }

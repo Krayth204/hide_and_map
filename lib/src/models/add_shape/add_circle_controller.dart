@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 class AddCircleController extends ChangeNotifier {
   LatLng? center;
   double radius = 500; // default meters
+  bool edit = false;
 
   void onMapTap(LatLng p) {
     center = p;
@@ -24,7 +25,7 @@ class AddCircleController extends ChangeNotifier {
         radius: radius,
         strokeColor: Colors.blue.shade900,
         strokeWidth: 2,
-        fillColor: Colors.blue.withOpacity(0.45),
+        fillColor: Colors.blue.withAlpha(115), // 45%
       )
     };
   }

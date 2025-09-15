@@ -25,8 +25,8 @@ class AddLinePopup extends StatelessWidget {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Add Line',
+                Text(
+                  controller.edit ? 'Edit Line' : 'Add Line',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),

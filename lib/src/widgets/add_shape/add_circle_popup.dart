@@ -25,8 +25,8 @@ class AddCirclePopup extends StatelessWidget {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Add Circle',
+                Text(
+                  controller.edit ? 'Edit Circle' : 'Add Circle',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),

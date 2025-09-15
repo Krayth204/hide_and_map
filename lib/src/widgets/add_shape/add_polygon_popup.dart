@@ -25,8 +25,8 @@ class AddPolygonPopup extends StatelessWidget {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Add Polygon',
+                Text(
+                  controller.edit ? 'Edit Polygon' : 'Add Polygon',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),

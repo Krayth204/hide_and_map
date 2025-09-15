@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class AddLineController extends ChangeNotifier {
-  final List<LatLng> points = [];
+  List<LatLng> points = [];
+  bool edit = false;
 
   void onMapTap(LatLng p) {
     points.add(p);
