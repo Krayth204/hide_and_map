@@ -21,12 +21,15 @@ class _PlayAreaSelectorState extends State<PlayAreaSelector> {
   @override
   void initState() {
     super.initState();
-    _radiusController =
-        TextEditingController(text: widget.controller.circleRadius.round().toString());
+    _radiusController = TextEditingController(
+      text: widget.controller.circleRadius.round().toString(),
+    );
 
     widget.controller.addListener(() {
       if (widget.controller.mode == SelectionMode.circle) {
-        _radiusController.text = widget.controller.circleRadius.round().toString();
+        _radiusController.text = widget.controller.circleRadius
+            .round()
+            .toString();
       }
     });
   }
@@ -54,7 +57,8 @@ class _PlayAreaSelectorState extends State<PlayAreaSelector> {
                     Expanded(
                       child: ChoiceChip(
                         label: const Text('Circle'),
-                        selected: widget.controller.mode == SelectionMode.circle,
+                        selected:
+                            widget.controller.mode == SelectionMode.circle,
                         onSelected: (_) =>
                             widget.controller.setMode(SelectionMode.circle),
                       ),
@@ -63,7 +67,8 @@ class _PlayAreaSelectorState extends State<PlayAreaSelector> {
                     Expanded(
                       child: ChoiceChip(
                         label: const Text('Polygon'),
-                        selected: widget.controller.mode == SelectionMode.polygon,
+                        selected:
+                            widget.controller.mode == SelectionMode.polygon,
                         onSelected: (_) =>
                             widget.controller.setMode(SelectionMode.polygon),
                       ),
@@ -77,7 +82,10 @@ class _PlayAreaSelectorState extends State<PlayAreaSelector> {
                       const Text('Radius (m):'),
                       Expanded(
                         child: Slider(
-                          value: widget.controller.circleRadius.clamp(1000, 100000),
+                          value: widget.controller.circleRadius.clamp(
+                            1000,
+                            100000,
+                          ),
                           min: 1000,
                           max: 100000,
                           divisions: 99,
@@ -96,7 +104,9 @@ class _PlayAreaSelectorState extends State<PlayAreaSelector> {
                           controller: _radiusController,
                           onSubmitted: (val) {
                             final parsed = double.tryParse(val);
-                            if (parsed != null) widget.controller.setRadius(parsed);
+                            if (parsed != null) {
+                              widget.controller.setRadius(parsed);
+                            }
                           },
                         ),
                       ),
@@ -121,7 +131,8 @@ class _PlayAreaSelectorState extends State<PlayAreaSelector> {
                   ),
                 const SizedBox(height: 12),
                 ElevatedButton(
-                  onPressed: (widget.controller.mode == SelectionMode.circle &&
+                  onPressed:
+                      (widget.controller.mode == SelectionMode.circle &&
                               widget.controller.circleCenter != null) ||
                           (widget.controller.mode == SelectionMode.polygon &&
                               widget.controller.polygonPoints.length >= 3)

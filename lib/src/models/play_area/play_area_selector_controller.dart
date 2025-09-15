@@ -26,7 +26,7 @@ class PlayAreaSelectorController extends ChangeNotifier {
           strokeColor: Colors.green,
           strokeWidth: 2,
           fillColor: Colors.green.withOpacity(0.2),
-        )
+        ),
       };
     }
     return {};
@@ -42,43 +42,45 @@ class PlayAreaSelectorController extends ChangeNotifier {
           strokeColor: Colors.blue,
           strokeWidth: 2,
           fillColor: Colors.blue.withOpacity(0.2),
-        )
+        ),
       };
     }
     return {};
   }
 
   Set<Marker> getMarkers() {
-  if (mode == SelectionMode.circle && circleCenter != null) {
-    return {
-      Marker(
-        markerId: const MarkerId('circle_center'),
-        position: circleCenter!,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-        draggable: true,
-        onDragEnd: (newPos) {
-          circleCenter = newPos;
-          notifyListeners();
-        },
-      )
-    };
-  } else if (mode == SelectionMode.polygon) {
-    return {
-      for (int i = 0; i < polygonPoints.length; i++)
+    if (mode == SelectionMode.circle && circleCenter != null) {
+      return {
         Marker(
-          markerId: MarkerId('polygon_point_$i'),
-          position: polygonPoints[i],
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          markerId: const MarkerId('circle_center'),
+          position: circleCenter!,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
           draggable: true,
           onDragEnd: (newPos) {
-            polygonPoints[i] = newPos;
+            circleCenter = newPos;
             notifyListeners();
           },
-        )
-    };
+        ),
+      };
+    } else if (mode == SelectionMode.polygon) {
+      return {
+        for (int i = 0; i < polygonPoints.length; i++)
+          Marker(
+            markerId: MarkerId('polygon_point_$i'),
+            position: polygonPoints[i],
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueGreen,
+            ),
+            draggable: true,
+            onDragEnd: (newPos) {
+              polygonPoints[i] = newPos;
+              notifyListeners();
+            },
+          ),
+      };
+    }
+    return {};
   }
-  return {};
-}
 
   void setMode(SelectionMode newMode) {
     mode = newMode;

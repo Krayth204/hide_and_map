@@ -60,13 +60,19 @@ class _MapScreenState extends State<MapScreen> {
                 webCameraControlEnabled: false,
                 myLocationEnabled: true,
                 myLocationButtonEnabled: true,
-                polygons: _playArea == null && _selectorController.mode == SelectionMode.polygon
+                polygons:
+                    _playArea == null &&
+                        _selectorController.mode == SelectionMode.polygon
                     ? _selectorController.getPolygons()
                     : _polygons,
-                circles: _playArea == null && _selectorController.mode == SelectionMode.circle
+                circles:
+                    _playArea == null &&
+                        _selectorController.mode == SelectionMode.circle
                     ? _selectorController.getCircles()
                     : {},
-                markers: _playArea == null ? _selectorController.getMarkers() : {},
+                markers: _playArea == null
+                    ? _selectorController.getMarkers()
+                    : {},
                 onMapCreated: (controller) => _controller = controller,
                 onTap: (point) {
                   if (_playArea == null) _selectorController.onMapTap(point);
@@ -78,7 +84,7 @@ class _MapScreenState extends State<MapScreen> {
             Align(
               alignment: Alignment.topCenter,
               child: PointerInterceptor(
-                child:  SizedBox(
+                child: SizedBox(
                   width: 400,
                   height: 230,
                   child: PlayAreaSelector(
