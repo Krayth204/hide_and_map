@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../models/add_shape/add_polygon_controller.dart';
+import '../../models/extra_shape.dart';
+import '../../models/shape_controller.dart';
 
 class AddPolygonPopup extends StatelessWidget {
-  final AddPolygonController controller;
+  final ShapeController controller;
   final VoidCallback onCancel;
   final VoidCallback onConfirm;
 
@@ -15,6 +16,11 @@ class AddPolygonPopup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    assert(
+      controller.type == ShapeType.polygon,
+      'AddPolygonPopup must be used with a polygon ShapeController',
+    );
+
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Padding(
@@ -27,7 +33,10 @@ class AddPolygonPopup extends StatelessWidget {
               children: [
                 Text(
                   controller.edit ? 'Edit Polygon' : 'Add Polygon',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 const Text('Tap map to add points. Drag markers to move.'),
