@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hide_and_map/src/util/color_helper.dart';
+import 'package:hide_and_map/src/widgets/shape_popup.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
@@ -12,10 +13,6 @@ import '../widgets/play_area/play_area_selector.dart';
 
 import '../models/shape_controller.dart';
 import '../models/extra_shape.dart';
-import '../widgets/add_shape/add_circle_popup.dart';
-import '../widgets/add_shape/add_line_popup.dart';
-import '../widgets/add_shape/add_polygon_popup.dart';
-
 import 'package:hide_and_map/main.dart';
 
 class MapScreen extends StatefulWidget {
@@ -338,26 +335,11 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildShapePopup(ShapeController controller) {
-    switch (controller.type) {
-      case ShapeType.circle:
-        return AddCirclePopup(
-          controller: controller,
-          onCancel: () => setState(_closeActiveAdd),
-          onConfirm: () => _onConfirmShape(controller),
-        );
-      case ShapeType.line:
-        return AddLinePopup(
-          controller: controller,
-          onCancel: () => setState(_closeActiveAdd),
-          onConfirm: () => _onConfirmShape(controller),
-        );
-      case ShapeType.polygon:
-        return AddPolygonPopup(
-          controller: controller,
-          onCancel: () => setState(_closeActiveAdd),
-          onConfirm: () => _onConfirmShape(controller),
-        );
-    }
+    return ShapePopup(
+      controller: controller,
+      onCancel: () => setState(_closeActiveAdd),
+      onConfirm: () => _onConfirmShape(controller),
+    );
   }
 
   bool _isEditable() {
