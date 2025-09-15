@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:hide_and_map/src/util/color_helper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
@@ -36,6 +37,7 @@ class _MapScreenState extends State<MapScreen> {
   final Set<Marker> _extraMarkers = HashSet();
   final List<ExtraShape> _extraShapes = [];
   String? _editingShapeId;
+  MaterialColor? _editingShapeColor;
 
   late final PlayAreaSelectorController _selectorController;
   ShapeController? _activeShapeController;
@@ -59,7 +61,12 @@ class _MapScreenState extends State<MapScreen> {
 
   void _closeActiveAdd() {
     _activeShapeController = null;
+    if (_editingShapeColor != null) {
+      final shape = _extraShapes.firstWhere((s) => s.id == _editingShapeId);
+      shape.color = _editingShapeColor!;
+    }
     _editingShapeId = null;
+    _editingShapeColor = null;
   }
 
   void _openAddShape(ShapeType type) {
@@ -91,6 +98,10 @@ class _MapScreenState extends State<MapScreen> {
                 title: const Text('Edit'),
                 onTap: () {
                   Navigator.pop(context);
+                  _editingShapeColor = ColorHelper.copyMaterialColor(
+                    shape.color,
+                  );
+                  shape.color = Colors.grey;
                   _editShape(shape);
                 },
               ),
@@ -113,7 +124,9 @@ class _MapScreenState extends State<MapScreen> {
 
   void _editShape(ExtraShape shape) {
     _editingShapeId = shape.id;
-    _activeShapeController = ShapeController(shape.type)..edit = true;
+    _activeShapeController = ShapeController(shape.type)
+      ..edit = true
+      ..color = _editingShapeColor!;
 
     switch (shape.type) {
       case ShapeType.circle:
@@ -189,9 +202,9 @@ class _MapScreenState extends State<MapScreen> {
                       (s) => Polygon(
                         polygonId: PolygonId(s.id),
                         points: s.points!,
-                        strokeColor: Colors.blue.shade900,
+                        strokeColor: s.color.shade900,
                         strokeWidth: 2,
-                        fillColor: Colors.blue.withAlpha(115),
+                        fillColor: s.color.withAlpha(115),
                         consumeTapEvents: _isEditable(),
                         onTap: () =>
                             _isEditable() ? _onShapeTapped(s.id) : null,
@@ -217,7 +230,7 @@ class _MapScreenState extends State<MapScreen> {
                       (s) => Polyline(
                         polylineId: PolylineId(s.id),
                         points: s.points!,
-                        color: Colors.blue.shade900,
+                        color: s.color.shade900,
                         width: 4,
                         consumeTapEvents: _isEditable(),
                         onTap: () =>
@@ -246,9 +259,9 @@ class _MapScreenState extends State<MapScreen> {
                         circleId: CircleId(s.id),
                         center: s.center!,
                         radius: s.radius!,
-                        strokeColor: Colors.blue.shade900,
+                        strokeColor: s.color.shade900,
                         strokeWidth: 2,
-                        fillColor: Colors.blue.withAlpha(115),
+                        fillColor: s.color.withAlpha(115),
                         consumeTapEvents: _isEditable(),
                         onTap: () =>
                             _isEditable() ? _onShapeTapped(s.id) : null,
@@ -362,7 +375,6 @@ class _MapScreenState extends State<MapScreen> {
       if (_editingShapeId != null) {
         final index = _extraShapes.indexWhere((s) => s.id == _editingShapeId);
         if (index != -1) _extraShapes[index] = shape;
-        _editingShapeId = null;
       } else {
         _extraShapes.add(shape);
       }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../util/color_helper.dart';
 import 'extra_shape.dart';
 
 class ShapeController extends ChangeNotifier {
   final ShapeType type;
   bool edit = false;
+  MaterialColor color = Colors.blue;
 
   LatLng? center;
   double radius = 500;
@@ -46,6 +48,11 @@ class ShapeController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setColor(MaterialColor c) {
+    color = c;
+    notifyListeners();
+  }
+
   void setRadius(double r) {
     if (type == ShapeType.circle) {
       radius = r;
@@ -60,9 +67,9 @@ class ShapeController extends ChangeNotifier {
         circleId: const CircleId('preview_add_circle'),
         center: center!,
         radius: radius,
-        strokeColor: Colors.blue.shade900,
+        strokeColor: color.shade900,
         strokeWidth: 2,
-        fillColor: Colors.blue.withAlpha(115),
+        fillColor: color.withAlpha(115),
       ),
     };
   }
@@ -73,7 +80,7 @@ class ShapeController extends ChangeNotifier {
       Polyline(
         polylineId: const PolylineId('preview_add_line'),
         points: List.from(points),
-        color: Colors.blue.shade900,
+        color: color.shade900,
         width: 4,
       ),
     };
@@ -85,9 +92,9 @@ class ShapeController extends ChangeNotifier {
       Polygon(
         polygonId: const PolygonId('preview_add_polygon'),
         points: List.from(points),
-        strokeColor: Colors.blue.shade900,
+        strokeColor: color.shade900,
         strokeWidth: 2,
-        fillColor: Colors.blue.withAlpha(115),
+        fillColor: color.withAlpha(115),
       ),
     };
   }
@@ -105,9 +112,7 @@ class ShapeController extends ChangeNotifier {
               center = p;
               notifyListeners();
             },
-            icon: BitmapDescriptor.defaultMarkerWithHue(
-              BitmapDescriptor.hueBlue,
-            ),
+            icon: ColorHelper.hueFromMaterialColor(color),
           ),
         };
       case ShapeType.line:
@@ -122,9 +127,7 @@ class ShapeController extends ChangeNotifier {
                 points[i] = p;
                 notifyListeners();
               },
-              icon: BitmapDescriptor.defaultMarkerWithHue(
-                BitmapDescriptor.hueBlue,
-              ),
+              icon: ColorHelper.hueFromMaterialColor(color),
             ),
         };
     }
@@ -134,13 +137,13 @@ class ShapeController extends ChangeNotifier {
     switch (type) {
       case ShapeType.circle:
         if (center == null) return null;
-        return ExtraShape.circle(id, center!, radius);
+        return ExtraShape.circle(id, color, center!, radius);
       case ShapeType.line:
         if (points.length < 2) return null;
-        return ExtraShape.line(id, List.from(points));
+        return ExtraShape.line(id, color, List.from(points));
       case ShapeType.polygon:
         if (points.length < 3) return null;
-        return ExtraShape.polygon(id, List.from(points));
+        return ExtraShape.polygon(id, color, List.from(points));
     }
   }
 }
