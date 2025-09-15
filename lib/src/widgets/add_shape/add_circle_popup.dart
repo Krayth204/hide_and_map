@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../models/add_shape/add_circle_controller.dart';
+import '../../models/extra_shape.dart';
+import '../../models/shape_controller.dart';
 
 class AddCirclePopup extends StatelessWidget {
-  final AddCircleController controller;
+  final ShapeController controller;
   final VoidCallback onCancel;
   final VoidCallback onConfirm;
 
@@ -15,6 +16,11 @@ class AddCirclePopup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    assert(
+      controller.type == ShapeType.circle,
+      'AddCirclePopup must be used with a circle ShapeController',
+    );
+
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Padding(
@@ -27,7 +33,10 @@ class AddCirclePopup extends StatelessWidget {
               children: [
                 Text(
                   controller.edit ? 'Edit Circle' : 'Add Circle',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 const Text('Tap map to set center. Drag marker to adjust.'),

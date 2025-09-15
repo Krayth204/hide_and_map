@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../models/add_shape/add_line_controller.dart';
+import '../../models/extra_shape.dart';
+import '../../models/shape_controller.dart';
 
 class AddLinePopup extends StatelessWidget {
-  final AddLineController controller;
+  final ShapeController controller;
   final VoidCallback onCancel;
   final VoidCallback onConfirm;
 
@@ -15,6 +16,11 @@ class AddLinePopup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    assert(
+      controller.type == ShapeType.line,
+      'AddLinePopup must be used with a line ShapeController',
+    );
+
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Padding(
@@ -27,7 +33,10 @@ class AddLinePopup extends StatelessWidget {
               children: [
                 Text(
                   controller.edit ? 'Edit Line' : 'Add Line',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 const Text('Tap map to add points. Drag points to move.'),
