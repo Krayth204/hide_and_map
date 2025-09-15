@@ -8,6 +8,8 @@ abstract class PlayArea {
 
   /// Returns the center of the play area
   LatLng getCenter();
+  
+  static PlayArea? playArea;
 
   /// Build overlay polygons with translucent map cover and hole
   /// Returns a set of polygons ready to pass into GoogleMap.polygons

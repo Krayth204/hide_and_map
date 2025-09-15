@@ -34,11 +34,10 @@ class _MapScreenState extends State<MapScreen> {
     zoom: 13,
   );
 
-  PlayArea? _playArea;
   Set<Polygon> _polygons = HashSet<Polygon>();
 
-  Set<Marker> _extraMarkers = HashSet();
-  List<ExtraShape> _extraShapes = [];
+  final Set<Marker> _extraMarkers = HashSet();
+  final List<ExtraShape> _extraShapes = [];
   String? _editingShapeId;
 
   late final PlayAreaSelectorController _selectorController;
@@ -59,7 +58,7 @@ class _MapScreenState extends State<MapScreen> {
     if (selected != null) {
       _polygons = PlayArea.buildOverlay(selected);
       setState(() {
-        _playArea = selected;
+        PlayArea.playArea = selected;
       });
     }
   }
@@ -93,7 +92,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onMapTap(LatLng point) {
-    if (_playArea == null) {
+    if (PlayArea.playArea == null) {
       _selectorController.onMapTap(point);
     } else {
       if (_activeCircleController != null) {
@@ -185,7 +184,7 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Hide and Map')),
       floatingActionButtonLocation: ExpandableFab.location,
-      floatingActionButton: _playArea != null
+      floatingActionButton: PlayArea.playArea != null
           ? ExpandableFab(
               pos: ExpandableFabPos.right,
               type: ExpandableFabType.up,
@@ -261,7 +260,7 @@ class _MapScreenState extends State<MapScreen> {
                   _activePolygonController!.getPreviewPolygons(),
                 );
               }
-              if (_playArea == null) {
+              if (PlayArea.playArea == null) {
                 polygonsToShow.addAll(_selectorController.getPolygons());
               }
 
@@ -317,13 +316,13 @@ class _MapScreenState extends State<MapScreen> {
                   _activeCircleController!.getPreviewCircles(),
                 );
               }
-              if (_playArea == null) {
+              if (PlayArea.playArea == null) {
                 circlesToShow.addAll(_selectorController.getCircles());
               }
 
               final markersToShow = <Marker>{};
               markersToShow.addAll(_extraMarkers);
-              if (_playArea == null) {
+              if (PlayArea.playArea == null) {
                 markersToShow.addAll(_selectorController.getMarkers());
               } else {
                 if (_activeCircleController != null) {
@@ -355,7 +354,7 @@ class _MapScreenState extends State<MapScreen> {
             },
           ),
 
-          if (_playArea == null)
+          if (PlayArea.playArea == null)
             Align(
               alignment: Alignment.topCenter,
               child: PointerInterceptor(
@@ -435,7 +434,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   bool _isEditable() {
-    return _playArea != null &&
+    return PlayArea.playArea != null &&
         _activeCircleController == null &&
         _activeLineController == null &&
         _activePolygonController == null;
