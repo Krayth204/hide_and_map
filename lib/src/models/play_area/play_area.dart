@@ -80,14 +80,14 @@ abstract class PlayArea {
       Polygon(
         polygonId: const PolygonId('overlay_east'),
         points: outerEast,
-        holes: [holeEast.expand((list) => list).toList()],
+        holes: holeEast,
         fillColor: Colors.black.withOpacity(0.5),
         strokeColor: Colors.transparent,
       ),
       Polygon(
         polygonId: const PolygonId('overlay_west'),
         points: outerWest,
-        holes: [holeWest.expand((list) => list).toList()],
+        holes: holeWest,
         fillColor: Colors.black.withOpacity(0.5),
         strokeColor: Colors.transparent,
       ),
