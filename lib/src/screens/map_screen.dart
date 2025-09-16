@@ -9,6 +9,7 @@ import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 
 import '../models/play_area/play_area.dart';
 import '../models/play_area/play_area_selector_controller.dart';
+import '../util/geo_math.dart';
 import '../widgets/play_area/play_area_selector.dart';
 
 import '../models/shape_controller.dart';
@@ -138,6 +139,8 @@ class _MapScreenState extends State<MapScreen> {
         break;
     }
 
+    _activeShapeController!.inverted = shape.inverted;
+
     setState(() {});
   }
 
@@ -188,94 +191,102 @@ class _MapScreenState extends State<MapScreen> {
               if (_activeShapeController != null) _activeShapeController!,
             ]),
             builder: (_, __) {
+              final previewShapes = _activeShapeController?.getPreviewShapes();
               final polygonsToShow = <Polygon>{};
               polygonsToShow.addAll(_polygons); // confirmed playArea overlay
-              polygonsToShow.addAll(
-                _extraShapes
-                    .where(
-                      (s) => s.type == ShapeType.polygon && s.points != null,
-                    )
-                    .map(
-                      (s) => Polygon(
-                        polygonId: PolygonId(s.id),
-                        points: s.points!,
-                        strokeColor: s.color.shade900,
-                        strokeWidth: 2,
-                        fillColor: s.color.withAlpha(115),
-                        consumeTapEvents: _isEditable(),
-                        onTap: () =>
-                            _isEditable() ? _onShapeTapped(s.id) : null,
-                      ),
-                    )
-                    .toSet(),
-              );
+              final polylinesToShow = <Polyline>{};
+              final circlesToShow = <Circle>{};
+              final markersToShow = <Marker>{};
 
-              if (_activeShapeController?.type == ShapeType.polygon) {
-                polygonsToShow.addAll(
-                  _activeShapeController!.getPreviewPolygons(),
-                );
+              for (final s in _extraShapes) {
+                switch (s.type) {
+                  case ShapeType.polygon:
+                    if (s.points != null) {
+                      polygonsToShow.add(
+                        Polygon(
+                          polygonId: PolygonId(s.id),
+                          points: s.inverted
+                              ? PlayArea.playArea!.getBoundary()
+                              : s.points!,
+                          holes: s.inverted
+                              ? [s.points!]
+                              : const <List<LatLng>>[],
+                          strokeColor: s.color.shade900,
+                          strokeWidth: 2,
+                          fillColor: s.color.withAlpha(115),
+                          consumeTapEvents: _isEditable(),
+                          onTap: () =>
+                              _isEditable() ? _onShapeTapped(s.id) : null,
+                        ),
+                      );
+                    }
+                    break;
+
+                  case ShapeType.line:
+                    if (s.points != null) {
+                      polylinesToShow.add(
+                        Polyline(
+                          polylineId: PolylineId(s.id),
+                          points: s.points!,
+                          color: s.color.shade900,
+                          width: 4,
+                          consumeTapEvents: _isEditable(),
+                          onTap: () =>
+                              _isEditable() ? _onShapeTapped(s.id) : null,
+                        ),
+                      );
+                    }
+                    break;
+
+                  case ShapeType.circle:
+                    if (s.center != null && s.radius != null) {
+                      if (s.inverted) {
+                        polygonsToShow.add(
+                          Polygon(
+                            polygonId: PolygonId(s.id),
+                            points: PlayArea.playArea!.getBoundary(),
+                            holes: [
+                              GeoMath.pointsOfCircle(s.center!, s.radius!),
+                            ],
+                            strokeColor: s.color.shade900,
+                            strokeWidth: 2,
+                            fillColor: s.color.withAlpha(115),
+                            consumeTapEvents: _isEditable(),
+                            onTap: () =>
+                                _isEditable() ? _onShapeTapped(s.id) : null,
+                          ),
+                        );
+                      } else {
+                        circlesToShow.add(
+                          Circle(
+                            circleId: CircleId(s.id),
+                            center: s.center!,
+                            radius: s.radius!,
+                            strokeColor: s.color.shade900,
+                            strokeWidth: 2,
+                            fillColor: s.color.withAlpha(115),
+                            consumeTapEvents: _isEditable(),
+                            onTap: () =>
+                                _isEditable() ? _onShapeTapped(s.id) : null,
+                          ),
+                        );
+                      }
+                    }
+                    break;
+                }
               }
+
+              if (previewShapes != null) {
+                polygonsToShow.addAll(previewShapes.polygons);
+                polylinesToShow.addAll(previewShapes.polylines);
+                circlesToShow.addAll(previewShapes.circles);
+              }
+
               if (PlayArea.playArea == null) {
                 polygonsToShow.addAll(_selectorController.getPolygons());
-              }
-
-              final polylinesToShow = <Polyline>{};
-              polylinesToShow.addAll(
-                _extraShapes
-                    .where((s) => s.type == ShapeType.line && s.points != null)
-                    .map(
-                      (s) => Polyline(
-                        polylineId: PolylineId(s.id),
-                        points: s.points!,
-                        color: s.color.shade900,
-                        width: 4,
-                        consumeTapEvents: _isEditable(),
-                        onTap: () =>
-                            _isEditable() ? _onShapeTapped(s.id) : null,
-                      ),
-                    )
-                    .toSet(),
-              );
-              if (_activeShapeController?.type == ShapeType.line) {
-                polylinesToShow.addAll(
-                  _activeShapeController!.getPreviewPolylines(),
-                );
-              }
-
-              final circlesToShow = <Circle>{};
-              circlesToShow.addAll(
-                _extraShapes
-                    .where(
-                      (s) =>
-                          s.type == ShapeType.circle &&
-                          s.center != null &&
-                          s.radius != null,
-                    )
-                    .map(
-                      (s) => Circle(
-                        circleId: CircleId(s.id),
-                        center: s.center!,
-                        radius: s.radius!,
-                        strokeColor: s.color.shade900,
-                        strokeWidth: 2,
-                        fillColor: s.color.withAlpha(115),
-                        consumeTapEvents: _isEditable(),
-                        onTap: () =>
-                            _isEditable() ? _onShapeTapped(s.id) : null,
-                      ),
-                    )
-                    .toSet(),
-              );
-              if (_activeShapeController?.type == ShapeType.circle) {
-                circlesToShow.addAll(
-                  _activeShapeController!.getPreviewCircles(),
-                );
-              }
-              if (PlayArea.playArea == null) {
                 circlesToShow.addAll(_selectorController.getCircles());
               }
 
-              final markersToShow = <Marker>{};
               markersToShow.addAll(_extraMarkers);
               if (PlayArea.playArea == null) {
                 markersToShow.addAll(_selectorController.getMarkers());
@@ -307,13 +318,17 @@ class _MapScreenState extends State<MapScreen> {
             Align(
               alignment: Alignment.topCenter,
               child: PointerInterceptor(
-                child: SizedBox(
-                  width: 400,
-                  height: 270,
-                  child: PlayAreaSelector(
-                    controller: _selectorController,
-                    onConfirmed: _onConfirmInitial,
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 400,
+                      child: PlayAreaSelector(
+                        controller: _selectorController,
+                        onConfirmed: _onConfirmInitial,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -322,10 +337,14 @@ class _MapScreenState extends State<MapScreen> {
             Align(
               alignment: Alignment.topCenter,
               child: PointerInterceptor(
-                child: SizedBox(
-                  width: 400,
-                  height: 230,
-                  child: _buildShapePopup(_activeShapeController!),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 400,
+                      child: _buildShapePopup(_activeShapeController!),
+                    ),
+                  ],
                 ),
               ),
             ),

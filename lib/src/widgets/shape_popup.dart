@@ -20,6 +20,7 @@ class ShapePopup extends StatelessWidget {
     String instructions;
     bool canConfirm;
     bool showUndoReset = false;
+    bool showInvertedCheckbox = false;
 
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -33,6 +34,7 @@ class ShapePopup extends StatelessWidget {
                 title = controller.edit ? 'Edit Circle' : 'Add Circle';
                 instructions = 'Tap map to set center. Drag marker to adjust.';
                 canConfirm = controller.center != null;
+                showInvertedCheckbox = true;
                 break;
               case ShapeType.line:
                 title = controller.edit ? 'Edit Line' : 'Add Line';
@@ -45,6 +47,7 @@ class ShapePopup extends StatelessWidget {
                 instructions = 'Tap map to add points. Drag markers to move.';
                 canConfirm = controller.points.length >= 3;
                 showUndoReset = true;
+                showInvertedCheckbox = true;
                 break;
             }
             return Column(
@@ -97,14 +100,26 @@ class ShapePopup extends StatelessWidget {
                         icon: const Icon(Icons.undo),
                         onPressed: controller.undo,
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.refresh),
                         onPressed: controller.reset,
                       ),
                     ],
                   ),
-                const SizedBox(height: 12),
+                if (showInvertedCheckbox) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: controller.inverted,
+                        onChanged: (v) => controller.setInverted(v ?? false),
+                      ),
+                      const Text('Invert (cover outside of shape)'),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
