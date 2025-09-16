@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class ColorHelper {
+abstract class ColorHelper {
   static BitmapDescriptor hueFromMaterialColor(MaterialColor color) {
     switch (color) {
       case Colors.blue:

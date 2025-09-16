@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class GeoMath {
+abstract class GeoMath {
   static List<LatLng> pointsOfCircle(LatLng center, double radiusMeters) {
     final points = <LatLng>[];
     const steps = 64;
