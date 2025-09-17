@@ -306,6 +306,7 @@ class _MapScreenState extends State<MapScreen> {
 
     setState(() {
       if (_editingShapeId != null) {
+        _editingShapeColor = null;
         final index = _shapes.indexWhere((s) => s.id == _editingShapeId);
         if (index != -1) _shapes[index] = shape;
       } else {

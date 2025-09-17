@@ -15,23 +15,15 @@ abstract class ColorHelper {
       case Colors.green:
         return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
       case Colors.purple:
-        return BitmapDescriptor.defaultMarkerWithHue(
-          BitmapDescriptor.hueMagenta,
-        );
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueMagenta);
       case Colors.orange:
-        return BitmapDescriptor.defaultMarkerWithHue(
-          BitmapDescriptor.hueOrange,
-        );
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
       case Colors.pink:
         return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose);
       case Colors.deepPurple:
-        return BitmapDescriptor.defaultMarkerWithHue(
-          BitmapDescriptor.hueViolet,
-        );
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet);
       case Colors.yellow:
-        return BitmapDescriptor.defaultMarkerWithHue(
-          BitmapDescriptor.hueYellow,
-        );
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
       default:
         return BitmapDescriptor.defaultMarker;
     }
@@ -54,14 +46,14 @@ abstract class ColorHelper {
 
   static List<MaterialColor> availableColors = [
     Colors.blue,
-    Colors.red,
-    Colors.indigo,
     Colors.cyan,
     Colors.green,
-    Colors.purple,
-    Colors.orange,
-    Colors.pink,
-    Colors.deepPurple,
     Colors.yellow,
+    Colors.orange,
+    Colors.red,
+    Colors.pink,
+    Colors.purple,
+    Colors.deepPurple,
+    Colors.indigo,
   ];
 }

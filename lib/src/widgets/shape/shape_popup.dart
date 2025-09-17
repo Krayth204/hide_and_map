@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/shape/shape.dart';
 import '../../models/shape/shape_controller.dart';
+import '../../util/color_helper.dart';
+import 'color_picker_overlay.dart';
 
 class ShapePopup extends StatelessWidget {
   final ShapeController controller;
@@ -50,15 +52,44 @@ class ShapePopup extends StatelessWidget {
                 showInvertedCheckbox = true;
                 break;
             }
+
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    SizedBox(width: 24, height: 24),
+                    Expanded(
+                      child: Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () async {
+                        final selected = await showDialog<MaterialColor>(
+                          context: context,
+                          builder: (_) => ColorPickerOverlay(
+                            current: controller.color,
+                            available: ColorHelper.availableColors,
+                          ),
+                        );
+                        if (selected != null) {
+                          controller.setColor(selected);
+                        }
+                      },
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: controller.color,
+                          border: Border.all(color: Colors.black54, width: 1),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Text(instructions),
@@ -123,10 +154,7 @@ class ShapePopup extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(
-                      onPressed: onCancel,
-                      child: const Text('Cancel'),
-                    ),
+                    TextButton(onPressed: onCancel, child: const Text('Cancel')),
                     const SizedBox(width: 8),
                     ElevatedButton(
                       onPressed: canConfirm ? onConfirm : null,
