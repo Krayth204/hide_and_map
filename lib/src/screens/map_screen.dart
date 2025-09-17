@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hide_and_map/src/util/color_helper.dart';
 import 'package:hide_and_map/src/widgets/shape/shape_popup.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 
 import '../models/play_area/play_area.dart';
 import '../models/play_area/play_area_selector_controller.dart';
+import '../util/location_provider.dart';
 import '../widgets/play_area/play_area_selector.dart';
 
 import '../models/shape/shape_controller.dart';
@@ -42,7 +42,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    Permission.location.request();
+    LocationProvider.requestPermission();
     _selectorController = PlayAreaSelectorController();
   }
 
@@ -70,6 +70,17 @@ class _MapScreenState extends State<MapScreen> {
     _closeActiveAdd();
     setState(() {
       _activeShapeController = ShapeController(type);
+      if (type == ShapeType.circle) {
+        LocationProvider.getLocation().then(
+          (latLng) => {
+            if (_activeShapeController != null && latLng != null)
+              {
+                if (_activeShapeController!.center == null)
+                  {_activeShapeController!.onMapTap(latLng)},
+              },
+          },
+        );
+      }
     });
   }
 
