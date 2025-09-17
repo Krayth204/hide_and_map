@@ -89,31 +89,33 @@ class _MapScreenState extends State<MapScreen> {
       context: context,
       builder: (_) {
         return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: const Text('Edit'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _editingShapeColor = ColorHelper.copyMaterialColor(
-                    shape.color,
-                  );
-                  shape.color = Colors.grey;
-                  _editShape(shape);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete),
-                title: const Text('Remove'),
-                onTap: () {
-                  setState(() {
-                    _extraShapes.removeWhere((s) => s.id == id);
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-            ],
+          child: PointerInterceptor(
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.edit),
+                  title: const Text('Edit'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _editingShapeColor = ColorHelper.copyMaterialColor(
+                      shape.color,
+                    );
+                    shape.color = Colors.grey;
+                    _editShape(shape);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.delete),
+                  title: const Text('Remove'),
+                  onTap: () {
+                    setState(() {
+                      _extraShapes.removeWhere((s) => s.id == id);
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
