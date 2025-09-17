@@ -91,6 +91,8 @@ class Shape {
             points: points!,
             color: color,
             width: 4,
+            startCap: Cap.roundCap,
+            endCap: Cap.roundCap,
             consumeTapEvents: editable,
             onTap: () => editable ? onTap?.call(id) : null,
           ),
