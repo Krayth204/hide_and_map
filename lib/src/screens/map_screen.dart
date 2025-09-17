@@ -2,7 +2,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hide_and_map/src/util/color_helper.dart';
-import 'package:hide_and_map/src/widgets/shape_popup.dart';
+import 'package:hide_and_map/src/widgets/shape/shape_popup.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
@@ -11,8 +11,8 @@ import '../models/play_area/play_area.dart';
 import '../models/play_area/play_area_selector_controller.dart';
 import '../widgets/play_area/play_area_selector.dart';
 
-import '../models/shape_controller.dart';
-import '../models/shape.dart';
+import '../models/shape/shape_controller.dart';
+import '../models/shape/shape.dart';
 import 'package:hide_and_map/main.dart';
 
 class MapScreen extends StatefulWidget {

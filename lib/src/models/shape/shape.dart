@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../util/geo_math.dart';
-import 'play_area/play_area.dart';
+import '../../util/geo_math.dart';
+import '../play_area/play_area.dart';
 import 'shape_object.dart';
 
 enum ShapeType { circle, line, polygon }
