@@ -9,11 +9,10 @@ import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 
 import '../models/play_area/play_area.dart';
 import '../models/play_area/play_area_selector_controller.dart';
-import '../util/geo_math.dart';
 import '../widgets/play_area/play_area_selector.dart';
 
 import '../models/shape_controller.dart';
-import '../models/extra_shape.dart';
+import '../models/shape.dart';
 import 'package:hide_and_map/main.dart';
 
 class MapScreen extends StatefulWidget {
@@ -32,8 +31,8 @@ class _MapScreenState extends State<MapScreen> {
   );
 
   Set<Polygon> _polygons = HashSet<Polygon>();
-  final Set<Marker> _extraMarkers = HashSet();
-  final List<ExtraShape> _extraShapes = [];
+  final Set<Marker> _markers = HashSet();
+  final List<Shape> _shapes = [];
   String? _editingShapeId;
   MaterialColor? _editingShapeColor;
 
@@ -60,7 +59,7 @@ class _MapScreenState extends State<MapScreen> {
   void _closeActiveAdd() {
     _activeShapeController = null;
     if (_editingShapeColor != null) {
-      final shape = _extraShapes.firstWhere((s) => s.id == _editingShapeId);
+      final shape = _shapes.firstWhere((s) => s.id == _editingShapeId);
       shape.color = _editingShapeColor!;
     }
     _editingShapeId = null;
@@ -83,7 +82,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onShapeTapped(String id) {
-    final shape = _extraShapes.firstWhere((s) => s.id == id);
+    final shape = _shapes.firstWhere((s) => s.id == id);
 
     showModalBottomSheet(
       context: context,
@@ -97,9 +96,7 @@ class _MapScreenState extends State<MapScreen> {
                   title: const Text('Edit'),
                   onTap: () {
                     Navigator.pop(context);
-                    _editingShapeColor = ColorHelper.copyMaterialColor(
-                      shape.color,
-                    );
+                    _editingShapeColor = ColorHelper.copyMaterialColor(shape.color);
                     shape.color = Colors.grey;
                     _editShape(shape);
                   },
@@ -109,7 +106,7 @@ class _MapScreenState extends State<MapScreen> {
                   title: const Text('Remove'),
                   onTap: () {
                     setState(() {
-                      _extraShapes.removeWhere((s) => s.id == id);
+                      _shapes.removeWhere((s) => s.id == id);
                     });
                     Navigator.pop(context);
                   },
@@ -122,7 +119,7 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  void _editShape(ExtraShape shape) {
+  void _editShape(Shape shape) {
     _editingShapeId = shape.id;
     _activeShapeController = ShapeController(shape.type)
       ..edit = true
@@ -193,95 +190,28 @@ class _MapScreenState extends State<MapScreen> {
               if (_activeShapeController != null) _activeShapeController!,
             ]),
             builder: (_, __) {
-              final previewShapes = _activeShapeController?.getPreviewShapes();
+              final preview = _activeShapeController?.getPreviewShapeObject();
               final polygonsToShow = <Polygon>{};
               polygonsToShow.addAll(_polygons); // confirmed playArea overlay
               final polylinesToShow = <Polyline>{};
               final circlesToShow = <Circle>{};
               final markersToShow = <Marker>{};
 
-              for (final s in _extraShapes) {
-                switch (s.type) {
-                  case ShapeType.polygon:
-                    if (s.points != null) {
-                      polygonsToShow.add(
-                        Polygon(
-                          polygonId: PolygonId(s.id),
-                          points: s.inverted
-                              ? PlayArea.playArea!.getBoundary()
-                              : s.points!,
-                          holes: s.inverted
-                              ? [s.points!]
-                              : const <List<LatLng>>[],
-                          strokeColor: s.color.shade900,
-                          strokeWidth: 2,
-                          fillColor: s.color.withAlpha(115),
-                          consumeTapEvents: _isEditable(),
-                          onTap: () =>
-                              _isEditable() ? _onShapeTapped(s.id) : null,
-                        ),
-                      );
-                    }
-                    break;
+              for (final s in _shapes) {
+                final obj = s.toShapeObject(
+                  editable: _isEditable(),
+                  onTap: _onShapeTapped,
+                );
 
-                  case ShapeType.line:
-                    if (s.points != null) {
-                      polylinesToShow.add(
-                        Polyline(
-                          polylineId: PolylineId(s.id),
-                          points: s.points!,
-                          color: s.color.shade900,
-                          width: 4,
-                          consumeTapEvents: _isEditable(),
-                          onTap: () =>
-                              _isEditable() ? _onShapeTapped(s.id) : null,
-                        ),
-                      );
-                    }
-                    break;
-
-                  case ShapeType.circle:
-                    if (s.center != null && s.radius != null) {
-                      if (s.inverted) {
-                        polygonsToShow.add(
-                          Polygon(
-                            polygonId: PolygonId(s.id),
-                            points: PlayArea.playArea!.getBoundary(),
-                            holes: [
-                              GeoMath.pointsOfCircle(s.center!, s.radius!),
-                            ],
-                            strokeColor: s.color.shade900,
-                            strokeWidth: 2,
-                            fillColor: s.color.withAlpha(115),
-                            consumeTapEvents: _isEditable(),
-                            onTap: () =>
-                                _isEditable() ? _onShapeTapped(s.id) : null,
-                          ),
-                        );
-                      } else {
-                        circlesToShow.add(
-                          Circle(
-                            circleId: CircleId(s.id),
-                            center: s.center!,
-                            radius: s.radius!,
-                            strokeColor: s.color.shade900,
-                            strokeWidth: 2,
-                            fillColor: s.color.withAlpha(115),
-                            consumeTapEvents: _isEditable(),
-                            onTap: () =>
-                                _isEditable() ? _onShapeTapped(s.id) : null,
-                          ),
-                        );
-                      }
-                    }
-                    break;
-                }
+                if (obj.circle != null) circlesToShow.add(obj.circle!);
+                if (obj.polyline != null) polylinesToShow.add(obj.polyline!);
+                if (obj.polygon != null) polygonsToShow.add(obj.polygon!);
               }
 
-              if (previewShapes != null) {
-                polygonsToShow.addAll(previewShapes.polygons);
-                polylinesToShow.addAll(previewShapes.polylines);
-                circlesToShow.addAll(previewShapes.circles);
+              if (preview != null) {
+                if (preview.circle != null) circlesToShow.add(preview.circle!);
+                if (preview.polyline != null) polylinesToShow.add(preview.polyline!);
+                if (preview.polygon != null) polygonsToShow.add(preview.polygon!);
               }
 
               if (PlayArea.playArea == null) {
@@ -289,7 +219,7 @@ class _MapScreenState extends State<MapScreen> {
                 circlesToShow.addAll(_selectorController.getCircles());
               }
 
-              markersToShow.addAll(_extraMarkers);
+              markersToShow.addAll(_markers);
               if (PlayArea.playArea == null) {
                 markersToShow.addAll(_selectorController.getMarkers());
               } else {
@@ -376,10 +306,10 @@ class _MapScreenState extends State<MapScreen> {
 
     setState(() {
       if (_editingShapeId != null) {
-        final index = _extraShapes.indexWhere((s) => s.id == _editingShapeId);
-        if (index != -1) _extraShapes[index] = shape;
+        final index = _shapes.indexWhere((s) => s.id == _editingShapeId);
+        if (index != -1) _shapes[index] = shape;
       } else {
-        _extraShapes.add(shape);
+        _shapes.add(shape);
       }
       _closeActiveAdd();
     });

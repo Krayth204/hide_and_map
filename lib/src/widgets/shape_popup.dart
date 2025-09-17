@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/extra_shape.dart';
+import '../models/shape.dart';
 import '../models/shape_controller.dart';
 
 class ShapePopup extends StatelessWidget {

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:hide_and_map/src/util/geo_math.dart';
 import '../util/color_helper.dart';
-import 'extra_shape.dart';
-import 'play_area/play_area.dart';
+import 'shape.dart';
+import 'shape_object.dart';
 
 class ShapeController extends ChangeNotifier {
   final ShapeType type;
@@ -68,73 +67,18 @@ class ShapeController extends ChangeNotifier {
     }
   }
 
-  PreviewShapes getPreviewShapes() {
-    switch (type) {
-      case ShapeType.circle:
-        if (center == null) return const PreviewShapes();
-        return PreviewShapes(
-          circles: inverted
-              ? const {}
-              : {
-                  Circle(
-                    circleId: const CircleId('preview_add_circle'),
-                    center: center!,
-                    radius: radius,
-                    strokeColor: color.shade900,
-                    strokeWidth: 2,
-                    fillColor: color.withAlpha(115),
-                  ),
-                },
-          polygons: inverted
-              ? {
-                  Polygon(
-                    polygonId: const PolygonId('preview_inverted_circle'),
-                    points: PlayArea.playArea!.getBoundary(),
-                    holes: [(GeoMath.pointsOfCircle(center!, radius))],
-                    strokeColor: color.shade900,
-                    strokeWidth: 2,
-                    fillColor: color.withAlpha(115),
-                  ),
-                }
-              : const {},
-        );
+  ShapeObject getPreviewShapeObject() {
+    final previewShape = Shape(
+      'preview_${type.name}',
+      type,
+      color,
+      center: center,
+      radius: radius,
+      points: points.isNotEmpty ? List<LatLng>.from(points) : null,
+      inverted: inverted,
+    );
 
-      case ShapeType.line:
-        if (points.length < 2) return const PreviewShapes();
-        return PreviewShapes(
-          polylines: {
-            Polyline(
-              polylineId: const PolylineId('preview_add_line'),
-              points: points,
-              color: color.shade900,
-              width: 4,
-            ),
-          },
-        );
-
-      case ShapeType.polygon:
-        if (points.length < 3) return const PreviewShapes();
-        return PreviewShapes(
-          polygons: {
-            inverted
-                ? Polygon(
-                    polygonId: const PolygonId('preview_inverted_polygon'),
-                    points: PlayArea.playArea!.getBoundary(),
-                    holes: [List<LatLng>.from(points)],
-                    strokeColor: color.shade900,
-                    strokeWidth: 2,
-                    fillColor: color.withAlpha(115),
-                  )
-                : Polygon(
-                    polygonId: const PolygonId('preview_add_polygon'),
-                    points: points,
-                    strokeColor: color.shade900,
-                    strokeWidth: 2,
-                    fillColor: color.withAlpha(115),
-                  ),
-          },
-        );
-    }
+    return previewShape.toShapeObject(editable: false, onTap: null);
   }
 
   Set<Marker> getMarkers() {
@@ -171,29 +115,17 @@ class ShapeController extends ChangeNotifier {
     }
   }
 
-  ExtraShape? buildShape(String id) {
+  Shape? buildShape(String id) {
     switch (type) {
       case ShapeType.circle:
         if (center == null) return null;
-        return ExtraShape.circle(id, color, center!, radius, inverted);
+        return Shape.circle(id, color, center!, radius, inverted: inverted);
       case ShapeType.line:
         if (points.length < 2) return null;
-        return ExtraShape.line(id, color, List.from(points));
+        return Shape.line(id, color, List.from(points));
       case ShapeType.polygon:
         if (points.length < 3) return null;
-        return ExtraShape.polygon(id, color, List.from(points), inverted);
+        return Shape.polygon(id, color, List.from(points), inverted: inverted);
     }
   }
-}
-
-class PreviewShapes {
-  final Set<Circle> circles;
-  final Set<Polyline> polylines;
-  final Set<Polygon> polygons;
-
-  const PreviewShapes({
-    this.circles = const {},
-    this.polylines = const {},
-    this.polygons = const {},
-  });
 }
