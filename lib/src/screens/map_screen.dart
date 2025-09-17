@@ -23,11 +23,11 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  late final GoogleMapController _controller;
+  GoogleMapController? _controller;
 
   static const CameraPosition _initialCamera = CameraPosition(
     target: LatLng(49.4480, 11.0780),
-    zoom: 13,
+    zoom: 4,
   );
 
   Set<Polygon> _polygons = HashSet<Polygon>();
@@ -42,7 +42,6 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    LocationProvider.requestPermission();
     _selectorController = PlayAreaSelectorController();
   }
 
@@ -251,7 +250,7 @@ class _MapScreenState extends State<MapScreen> {
                 polylines: polylinesToShow,
                 circles: circlesToShow,
                 markers: markersToShow,
-                onMapCreated: (controller) => _controller = controller,
+                onMapCreated: _onMapCreated,
                 onTap: _onMapTap,
               );
             },
@@ -325,5 +324,38 @@ class _MapScreenState extends State<MapScreen> {
       }
       _closeActiveAdd();
     });
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    _controller = controller;
+
+    LocationProvider.requestPermission().then(
+      (granted) => {
+        if (granted)
+          {
+            if (PlayArea.playArea != null)
+              {
+                _controller!.animateCamera(
+                  CameraUpdate.newLatLng(PlayArea.playArea!.getCenter()),
+                ),
+              }
+            else
+              {
+                LocationProvider.getLocation().then(
+                  (latLng) async => {
+                    if (latLng != null)
+                      {
+                        _controller!.animateCamera(
+                          CameraUpdate.newCameraPosition(
+                            CameraPosition(target: latLng, zoom: 8),
+                          ),
+                        ),
+                      },
+                  },
+                ),
+              },
+          },
+      },
+    );
   }
 }

@@ -6,21 +6,21 @@ abstract class LocationProvider {
   static bool _locationAvailable = false;
   static final Location _location = Location();
 
-  static Future<void> requestPermission() async {
+  static Future<bool> requestPermission() async {
     bool serviceEnabled;
     PermissionStatus permissionGranted;
 
     if(kIsWeb) {
       _locationAvailable = true;
       getLocation();
-      return;
+      return true;
     }
 
     serviceEnabled = await _location.serviceEnabled();
     if (!serviceEnabled) {
       serviceEnabled = await _location.requestService();
       if (!serviceEnabled) {
-        return;
+        return false;
       }
     }
 
@@ -28,10 +28,10 @@ abstract class LocationProvider {
     if (permissionGranted == PermissionStatus.denied) {
       permissionGranted = await _location.requestPermission();
       if (permissionGranted != PermissionStatus.granted) {
-        return;
+        return false;
       }
     }
-    _locationAvailable = true;
+    return _locationAvailable = true;
   }
 
   static Future<LatLng?> getLocation() async {
