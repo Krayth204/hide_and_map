@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import 'circle_play_area.dart';
+import 'polygon_play_area.dart';
+
 /// Abstract play area base class
 abstract class PlayArea {
   /// Returns a list of LatLng points that form the *outer boundary* of the area
@@ -8,8 +11,26 @@ abstract class PlayArea {
 
   /// Returns the center of the play area
   LatLng getCenter();
-  
-  static PlayArea? playArea;
+
+  Map<String, dynamic> toJson();
+
+  /// Deserialize a PlayArea from JSON
+  static PlayArea fromJson(Map<String, dynamic> json) {
+    switch (json['type']) {
+      case 'circle':
+        return CirclePlayArea(
+          LatLng(json['center']['lat'], json['center']['lng']),
+          json['radius'],
+        );
+      case 'polygon':
+        final vertices = (json['vertices'] as List)
+            .map((v) => LatLng(v['lat'], v['lng']))
+            .toList();
+        return PolygonPlayArea(vertices);
+      default:
+        throw ArgumentError('Unknown PlayArea type: ${json['type']}');
+    }
+  }
 
   /// Build overlay polygons with translucent map cover and hole
   /// Returns a set of polygons ready to pass into GoogleMap.polygons

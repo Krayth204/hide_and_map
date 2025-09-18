@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../util/color_helper.dart';
+import '../play_area/play_area.dart';
 import 'shape.dart';
 import 'shape_object.dart';
 
@@ -67,7 +68,7 @@ class ShapeController extends ChangeNotifier {
     }
   }
 
-  ShapeObject getPreviewShapeObject() {
+  ShapeObject getPreviewShapeObject(PlayArea playArea) {
     final previewShape = Shape(
       'preview_${type.name}',
       type,
@@ -78,7 +79,7 @@ class ShapeController extends ChangeNotifier {
       inverted: inverted,
     );
 
-    return previewShape.toShapeObject(editable: false, onTap: null);
+    return previewShape.toShapeObject(playArea, editable: false, onTap: null);
   }
 
   Set<Marker> getMarkers() {
@@ -116,16 +117,28 @@ class ShapeController extends ChangeNotifier {
   }
 
   Shape? buildShape(String id) {
+    LatLng roundLatLng(LatLng p) {
+      double round(double v) => double.parse(v.toStringAsFixed(5));
+      return LatLng(round(p.latitude), round(p.longitude));
+    }
+
     switch (type) {
       case ShapeType.circle:
         if (center == null) return null;
-        return Shape.circle(id, color, center!, radius, inverted: inverted);
+        return Shape.circle(id, color, roundLatLng(center!), radius, inverted: inverted);
+
       case ShapeType.line:
         if (points.length < 2) return null;
-        return Shape.line(id, color, List.from(points));
+        return Shape.line(id, color, points.map(roundLatLng).toList());
+
       case ShapeType.polygon:
         if (points.length < 3) return null;
-        return Shape.polygon(id, color, List.from(points), inverted: inverted);
+        return Shape.polygon(
+          id,
+          color,
+          points.map(roundLatLng).toList(),
+          inverted: inverted,
+        );
     }
   }
 }

@@ -12,7 +12,7 @@ abstract class LocationProvider {
 
     if(kIsWeb) {
       _locationAvailable = true;
-      getLocation();
+      await getLocation();
       return true;
     }
 

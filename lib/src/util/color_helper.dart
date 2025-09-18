@@ -56,4 +56,11 @@ abstract class ColorHelper {
     Colors.deepPurple,
     Colors.indigo,
   ];
+
+  static MaterialColor resolveMaterialColor(int value) {
+    return availableColors.firstWhere(
+      (c) => c.value == value,
+      orElse: () => Colors.blue,
+    );
+  }
 }

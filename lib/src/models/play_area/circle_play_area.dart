@@ -11,11 +11,21 @@ class CirclePlayArea extends PlayArea {
 
   @override
   List<LatLng> getBoundary() {
-    // Approximate circle with 64 points
-    List<LatLng> points = GeoMath.pointsOfCircle(center, radiusMeters);
-    return points;
+    return GeoMath.pointsOfCircle(center, radiusMeters);
   }
 
   @override
   LatLng getCenter() => center;
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'type': 'circle',
+      'center': {
+        'lat': double.parse(center.latitude.toStringAsFixed(5)),
+        'lng': double.parse(center.longitude.toStringAsFixed(5)),
+      },
+      'radius': radiusMeters,
+    };
+  }
 }

@@ -6,6 +6,7 @@ import 'package:hide_and_map/src/widgets/shape/shape_popup.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 
+import '../models/game_state.dart';
 import '../models/play_area/play_area.dart';
 import '../models/play_area/play_area_selector_controller.dart';
 import '../util/location_provider.dart';
@@ -23,42 +24,51 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  GameState gameState = GameState();
   GoogleMapController? _controller;
 
   static const CameraPosition _initialCamera = CameraPosition(
     target: LatLng(49.4480, 11.0780),
     zoom: 4,
   );
+  late Future gameStateLoadedFuture;
 
   Set<Polygon> _polygons = HashSet<Polygon>();
-  final Set<Marker> _markers = HashSet();
-  final List<Shape> _shapes = [];
   String? _editingShapeId;
   MaterialColor? _editingShapeColor;
 
-  late final PlayAreaSelectorController _selectorController;
+  final PlayAreaSelectorController _selectorController = PlayAreaSelectorController();
   ShapeController? _activeShapeController;
 
   @override
   void initState() {
     super.initState();
-    _selectorController = PlayAreaSelectorController();
+    gameStateLoadedFuture = GameState.loadGameState().then(
+      (gS) => {
+        if (gS.playArea != null) {_loadGameState(gS)},
+      },
+    );
+  }
+
+  void _loadGameState(GameState gS) {
+    _polygons = PlayArea.buildOverlay(gS.playArea);
+    setState(() {
+      gameState = gS;
+    });
   }
 
   void _onConfirmInitial() {
     final selected = _selectorController.confirm();
     if (selected != null) {
-      _polygons = PlayArea.buildOverlay(selected);
-      setState(() {
-        PlayArea.playArea = selected;
-      });
+      _loadGameState(gameState.copyWith(playArea: selected));
+      GameState.saveGameState(gameState);
     }
   }
 
   void _closeActiveAdd() {
     _activeShapeController = null;
     if (_editingShapeColor != null) {
-      final shape = _shapes.firstWhere((s) => s.id == _editingShapeId);
+      final shape = gameState.shapes.firstWhere((s) => s.id == _editingShapeId);
       shape.color = _editingShapeColor!;
     }
     _editingShapeId = null;
@@ -84,7 +94,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onMapTap(LatLng point) {
-    if (PlayArea.playArea == null) {
+    if (gameState.playArea == null) {
       _selectorController.onMapTap(point);
     } else {
       _activeShapeController?.onMapTap(point);
@@ -92,7 +102,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onShapeTapped(String id) {
-    final shape = _shapes.firstWhere((s) => s.id == id);
+    final shape = gameState.shapes.firstWhere((s) => s.id == id);
 
     showModalBottomSheet(
       context: context,
@@ -116,7 +126,7 @@ class _MapScreenState extends State<MapScreen> {
                   title: const Text('Remove'),
                   onTap: () {
                     setState(() {
-                      _shapes.removeWhere((s) => s.id == id);
+                      gameState.shapes.removeWhere((s) => s.id == id);
                     });
                     Navigator.pop(context);
                   },
@@ -158,7 +168,7 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Hide and Map')),
       floatingActionButtonLocation: ExpandableFab.location,
-      floatingActionButton: PlayArea.playArea != null
+      floatingActionButton: gameState.playArea != null
           ? ExpandableFab(
               pos: ExpandableFabPos.right,
               type: ExpandableFabType.up,
@@ -200,40 +210,37 @@ class _MapScreenState extends State<MapScreen> {
               if (_activeShapeController != null) _activeShapeController!,
             ]),
             builder: (_, __) {
-              final preview = _activeShapeController?.getPreviewShapeObject();
               final polygonsToShow = <Polygon>{};
               polygonsToShow.addAll(_polygons); // confirmed playArea overlay
               final polylinesToShow = <Polyline>{};
               final circlesToShow = <Circle>{};
               final markersToShow = <Marker>{};
 
-              for (final s in _shapes) {
-                final obj = s.toShapeObject(
-                  editable: _isEditable(),
-                  onTap: _onShapeTapped,
-                );
-
-                if (obj.circle != null) circlesToShow.add(obj.circle!);
-                if (obj.polyline != null) polylinesToShow.add(obj.polyline!);
-                if (obj.polygon != null) polygonsToShow.add(obj.polygon!);
-              }
-
-              if (preview != null) {
-                if (preview.circle != null) circlesToShow.add(preview.circle!);
-                if (preview.polyline != null) polylinesToShow.add(preview.polyline!);
-                if (preview.polygon != null) polygonsToShow.add(preview.polygon!);
-              }
-
-              if (PlayArea.playArea == null) {
+              if (gameState.playArea == null) {
                 polygonsToShow.addAll(_selectorController.getPolygons());
                 circlesToShow.addAll(_selectorController.getCircles());
-              }
-
-              markersToShow.addAll(_markers);
-              if (PlayArea.playArea == null) {
                 markersToShow.addAll(_selectorController.getMarkers());
               } else {
+                for (final s in gameState.shapes) {
+                  final obj = s.toShapeObject(
+                    gameState.playArea!,
+                    editable: _isEditable(),
+                    onTap: _onShapeTapped,
+                  );
+
+                  if (obj.circle != null) circlesToShow.add(obj.circle!);
+                  if (obj.polyline != null) polylinesToShow.add(obj.polyline!);
+                  if (obj.polygon != null) polygonsToShow.add(obj.polygon!);
+                }
+
                 if (_activeShapeController != null) {
+                  final preview = _activeShapeController!.getPreviewShapeObject(
+                    gameState.playArea!,
+                  );
+                  if (preview.circle != null) circlesToShow.add(preview.circle!);
+                  if (preview.polyline != null) polylinesToShow.add(preview.polyline!);
+                  if (preview.polygon != null) polygonsToShow.add(preview.polygon!);
+
                   markersToShow.addAll(_activeShapeController!.getMarkers());
                 }
               }
@@ -256,7 +263,7 @@ class _MapScreenState extends State<MapScreen> {
             },
           ),
 
-          if (PlayArea.playArea == null)
+          if (gameState.playArea == null)
             Align(
               alignment: Alignment.topCenter,
               child: PointerInterceptor(
@@ -304,7 +311,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   bool _isEditable() {
-    return PlayArea.playArea != null && _activeShapeController == null;
+    return gameState.playArea != null && _activeShapeController == null;
   }
 
   void _onConfirmShape(ShapeController controller) {
@@ -317,45 +324,58 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       if (_editingShapeId != null) {
         _editingShapeColor = null;
-        final index = _shapes.indexWhere((s) => s.id == _editingShapeId);
-        if (index != -1) _shapes[index] = shape;
+        final index = gameState.shapes.indexWhere((s) => s.id == _editingShapeId);
+        if (index != -1) gameState.shapes[index] = shape;
       } else {
-        _shapes.add(shape);
+        gameState.shapes.add(shape);
       }
       _closeActiveAdd();
     });
+    GameState.saveGameState(gameState);
   }
 
   void _onMapCreated(GoogleMapController controller) {
     _controller = controller;
 
-    LocationProvider.requestPermission().then(
-      (granted) => {
-        if (granted)
+    gameStateLoadedFuture.then(
+      (_) => {
+        if (gameState.playArea != null)
           {
-            if (PlayArea.playArea != null)
+            _controller!.animateCamera(
+              CameraUpdate.newCameraPosition(
+                CameraPosition(target: gameState.playArea!.getCenter(), zoom: 8),
+              ),
+            ),
+          },
+        LocationProvider.requestPermission().then(
+          (granted) => {
+            if (granted)
               {
-                _controller!.animateCamera(
-                  CameraUpdate.newLatLng(PlayArea.playArea!.getCenter()),
-                ),
-              }
-            else
-              {
-                LocationProvider.getLocation().then(
-                  (latLng) async => {
-                    if (latLng != null)
-                      {
-                        _controller!.animateCamera(
-                          CameraUpdate.newCameraPosition(
-                            CameraPosition(target: latLng, zoom: 8),
-                          ),
-                        ),
+                if (gameState.playArea == null)
+                  {
+                    LocationProvider.getLocation().then(
+                      (latLng) async => {
+                        if (latLng != null)
+                          {
+                            _controller!.animateCamera(
+                              CameraUpdate.newCameraPosition(
+                                CameraPosition(target: latLng, zoom: 8),
+                              ),
+                            ),
+                          },
                       },
+                    ),
                   },
-                ),
               },
           },
+        ),
       },
     );
+  }
+
+  @override
+  void dispose() {
+    GameState.saveGameState(gameState);
+    super.dispose();
   }
 }

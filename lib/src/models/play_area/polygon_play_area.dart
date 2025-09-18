@@ -20,4 +20,17 @@ class PolygonPlayArea extends PlayArea {
     }
     return LatLng(sumLat / vertices.length, sumLng / vertices.length);
   }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'type': 'polygon',
+      'vertices': vertices
+          .map((v) => {
+                'lat': double.parse(v.latitude.toStringAsFixed(5)),
+                'lng': double.parse(v.longitude.toStringAsFixed(5)),
+              })
+          .toList(),
+    };
+  }
 }
