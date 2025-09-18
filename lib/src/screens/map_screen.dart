@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hide_and_map/src/util/color_helper.dart';
@@ -315,9 +316,10 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onConfirmShape(ShapeController controller) {
+    int rand = Random().nextInt(1000);
     final id =
         _editingShapeId ??
-        'extra_${controller.type.name}_${DateTime.now().millisecondsSinceEpoch}';
+        '${controller.type.name[0]}${DateTime.now().millisecondsSinceEpoch%1000000}$rand';
     final shape = controller.buildShape(id);
     if (shape == null) return;
 

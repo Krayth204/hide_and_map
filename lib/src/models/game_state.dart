@@ -15,8 +15,8 @@ class GameState {
   }
 
   Map<String, dynamic> _toJson() => {
-    'playArea': playArea?.toJson(),
-    'shapes': shapes.map((s) => s.toJson()).toList(),
+    'pA': playArea?.toJson(),
+    'sh': shapes.map((s) => s.toJson()).toList(),
   };
 
   String encodeGameState() {
@@ -32,8 +32,8 @@ class GameState {
   }
 
   static GameState _fromJson(Map<String, dynamic> json) => GameState(
-    playArea: json['playArea'] != null ? PlayArea.fromJson(json['playArea']) : null,
-    shapes: (json['shapes'] as List).map((s) => Shape.fromJson(s)).toList(),
+    playArea: json['pA'] != null ? PlayArea.fromJson(json['pA']) : null,
+    shapes: (json['sh'] as List).map((s) => Shape.fromJson(s)).toList(),
   );
 
   static GameState decodeGameState(String stored) {

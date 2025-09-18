@@ -24,8 +24,8 @@ class PolygonPlayArea extends PlayArea {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': 'polygon',
-      'vertices': vertices
+      't': 'pg',
+      'ver': vertices
           .map((v) => {
                 'lat': double.parse(v.latitude.toStringAsFixed(5)),
                 'lng': double.parse(v.longitude.toStringAsFixed(5)),

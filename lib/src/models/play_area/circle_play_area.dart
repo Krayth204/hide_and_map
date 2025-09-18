@@ -20,12 +20,12 @@ class CirclePlayArea extends PlayArea {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': 'circle',
-      'center': {
+      't': 'c',
+      'cen': {
         'lat': double.parse(center.latitude.toStringAsFixed(5)),
         'lng': double.parse(center.longitude.toStringAsFixed(5)),
       },
-      'radius': radiusMeters,
+      'rad': radiusMeters,
     };
   }
 }

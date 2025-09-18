@@ -16,19 +16,19 @@ abstract class PlayArea {
 
   /// Deserialize a PlayArea from JSON
   static PlayArea fromJson(Map<String, dynamic> json) {
-    switch (json['type']) {
-      case 'circle':
+    switch (json['t']) {
+      case 'c':
         return CirclePlayArea(
-          LatLng(json['center']['lat'], json['center']['lng']),
-          json['radius'],
+          LatLng(json['cen']['lat'], json['cen']['lng']),
+          json['rad'],
         );
-      case 'polygon':
-        final vertices = (json['vertices'] as List)
+      case 'pg':
+        final vertices = (json['ver'] as List)
             .map((v) => LatLng(v['lat'], v['lng']))
             .toList();
         return PolygonPlayArea(vertices);
       default:
-        throw ArgumentError('Unknown PlayArea type: ${json['type']}');
+        throw ArgumentError('Unknown PlayArea type: ${json['t']}');
     }
   }
 

@@ -123,14 +123,14 @@ class Shape {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'type': type.name,
-      'color': color.value,
-      'center': center != null
+      'ty': type.name.substring(0, 1),
+      'col': color.value,
+      'sce': center != null
           ? {'lat': center!.latitude, 'lng': center!.longitude}
           : null,
-      'radius': radius,
-      'points': points?.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList(),
-      'inverted': inverted,
+      'sra': radius,
+      'pts': points?.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList(),
+      'i': inverted.toString()[0],
     };
   }
 
@@ -138,28 +138,28 @@ class Shape {
     Map<String, dynamic> json, {
     List<MaterialColor>? availableColors,
   }) {
-    final type = ShapeType.values.firstWhere((e) => e.name == json['type']);
+    final type = ShapeType.values.firstWhere((e) => e.name.startsWith(json['ty']));
     final id = json['id'] as String;
-    final inverted = json['inverted'] ?? false;
+    final inverted = (json['i'] as String) == 't';
 
-    final colorValue = json['color'] as int;
+    final colorValue = json['col'] as int;
     MaterialColor resolvedColor = ColorHelper.resolveMaterialColor(colorValue);
 
     switch (type) {
       case ShapeType.circle:
-        final c = json['center'];
+        final c = json['sce'];
         final center = LatLng(c['lat'], c['lng']);
-        final radius = (json['radius'] as num).toDouble();
+        final radius = (json['sra'] as num).toDouble();
         return Shape.circle(id, resolvedColor, center, radius, inverted: inverted);
 
       case ShapeType.line:
-        final pts = (json['points'] as List)
+        final pts = (json['pts'] as List)
             .map((p) => LatLng(p['lat'], p['lng']))
             .toList();
         return Shape.line(id, resolvedColor, pts);
 
       case ShapeType.polygon:
-        final pts = (json['points'] as List)
+        final pts = (json['pts'] as List)
             .map((p) => LatLng(p['lat'], p['lng']))
             .toList();
         return Shape.polygon(id, resolvedColor, pts, inverted: inverted);
