@@ -11,6 +11,8 @@ import '../models/game_state.dart';
 import '../models/play_area/play_area.dart';
 import '../models/play_area/play_area_selector_controller.dart';
 import '../util/location_provider.dart';
+import '../widgets/import_export/import_dialog.dart';
+import '../widgets/import_export/share_dialog.dart';
 import '../widgets/play_area/play_area_selector.dart';
 
 import '../models/shape/shape_controller.dart';
@@ -52,10 +54,12 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _loadGameState(GameState gS) {
+    _activeShapeController = null;
     _polygons = PlayArea.buildOverlay(gS.playArea);
     setState(() {
       gameState = gS;
     });
+    GameState.saveGameState(gS);
   }
 
   void _onConfirmInitial() {
@@ -175,10 +179,17 @@ class _MapScreenState extends State<MapScreen> {
               onSelected: (value) {
                 switch (value) {
                   case 'import':
-                    // TODO: implement import
+                    showDialog<String>(
+                      context: context,
+                      builder: (_) => const ImportDialog(),
+                    ).then((imported) => {_decodeImport(imported, context)});
                     break;
                   case 'share':
-                    // TODO: implement share
+                    final encoded = gameState.encodeGameState();
+                    showDialog(
+                      context: context,
+                      builder: (_) => ShareDialog(base64String: encoded),
+                    );
                     break;
                   case 'reset':
                     _showResetDialog();
@@ -236,7 +247,11 @@ class _MapScreenState extends State<MapScreen> {
               distance: 60,
               openButtonBuilder: RotateFloatingActionButtonBuilder(
                 backgroundColor: Colors.blueAccent,
-                child: const Icon(Icons.add, size: 28),
+                child: PointerInterceptor(child: const Icon(Icons.add, size: 28)),
+              ),
+              closeButtonBuilder: DefaultFloatingActionButtonBuilder(
+                fabSize: ExpandableFabSize.small,
+                child: PointerInterceptor(child: const Icon(Icons.close)),
               ),
               children: [
                 PointerInterceptor(
@@ -361,6 +376,19 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ),
     );
+  }
+
+  void _decodeImport(String? imported, BuildContext context) {
+    if (imported != null && imported.isNotEmpty) {
+      final gS = GameState.decodeGameState(imported);
+      if (gS.playArea != null) {
+        _loadGameState(gS);
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Import failed!")));
+      }
+    }
   }
 
   Widget _buildShapePopup(ShapeController controller) {

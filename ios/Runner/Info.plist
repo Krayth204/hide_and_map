@@ -49,5 +49,7 @@
 	<string>Your location is required to show your location</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Your location is required to show your location</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to scan QR codes</string>
 </dict>
 </plist>

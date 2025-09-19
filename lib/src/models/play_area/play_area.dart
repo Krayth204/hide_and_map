@@ -20,7 +20,7 @@ abstract class PlayArea {
       case 'c':
         return CirclePlayArea(
           LatLng(json['cen']['lat'], json['cen']['lng']),
-          json['rad'],
+          double.parse(json['rad'].toString()),
         );
       case 'pg':
         final vertices = (json['ver'] as List)

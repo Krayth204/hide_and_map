@@ -37,9 +37,9 @@ class GameState {
   );
 
   static GameState decodeGameState(String stored) {
-    final compressed = base64Decode(stored);
-    final decompressed = GZipDecoder().decodeBytes(compressed);
     try {
+      final compressed = base64Decode(stored);
+      final decompressed = GZipDecoder().decodeBytes(compressed);
       final data = jsonDecode(utf8.decode(decompressed)) as Map<String, dynamic>;
       return _fromJson(data);
     } catch (_) {
