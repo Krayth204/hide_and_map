@@ -167,7 +167,67 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Hide and Map')),
+      appBar: AppBar(
+        title: const Text('Hide and Map'),
+        actions: [
+          PointerInterceptor(
+            child: PopupMenuButton<String>(
+              onSelected: (value) {
+                switch (value) {
+                  case 'import':
+                    // TODO: implement import
+                    break;
+                  case 'share':
+                    // TODO: implement share
+                    break;
+                  case 'reset':
+                    _showResetDialog();
+                    break;
+                }
+              },
+              iconSize: 35,
+              itemBuilder: (BuildContext context) => [
+                PopupMenuItem(
+                  value: 'import',
+                  child: PointerInterceptor(
+                    child: Row(
+                      children: const [
+                        Icon(Icons.file_download, color: Colors.black54),
+                        SizedBox(width: 8),
+                        Text("Import"),
+                      ],
+                    ),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'share',
+                  child: PointerInterceptor(
+                    child: Row(
+                      children: const [
+                        Icon(Icons.share, color: Colors.black54),
+                        SizedBox(width: 8),
+                        Text("Share"),
+                      ],
+                    ),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'reset',
+                  child: PointerInterceptor(
+                    child: Row(
+                      children: const [
+                        Icon(Icons.restart_alt, color: Colors.black54),
+                        SizedBox(width: 8),
+                        Text("Reset"),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
       floatingActionButtonLocation: ExpandableFab.location,
       floatingActionButton: gameState.playArea != null
           ? ExpandableFab(
@@ -319,7 +379,7 @@ class _MapScreenState extends State<MapScreen> {
     int rand = Random().nextInt(1000);
     final id =
         _editingShapeId ??
-        '${controller.type.name[0]}${DateTime.now().millisecondsSinceEpoch%1000000}$rand';
+        '${controller.type.name[0]}${DateTime.now().millisecondsSinceEpoch % 1000000}$rand';
     final shape = controller.buildShape(id);
     if (shape == null) return;
 
@@ -371,6 +431,41 @@ class _MapScreenState extends State<MapScreen> {
               },
           },
         ),
+      },
+    );
+  }
+
+  void _showResetDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return PointerInterceptor(
+          child: AlertDialog(
+            title: const Text("Reset Game"),
+            content: const Text(
+              "Do you really want to reset everything? This cannot be undone.",
+            ),
+            actions: [
+              TextButton(
+                child: const Text("Cancel"),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text("Reset", style: TextStyle(color: Colors.white)),
+                onPressed: () {
+                  setState(() {
+                    gameState = GameState();
+                    _polygons.clear();
+                    _activeShapeController = null;
+                  });
+                  GameState.saveGameState(gameState);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
       },
     );
   }
