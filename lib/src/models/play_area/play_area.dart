@@ -43,77 +43,81 @@ abstract class PlayArea {
     final outerEast = <LatLng>[
       const LatLng(-89, 0),
       const LatLng(89, 0),
-      const LatLng(89, 179.999),
-      const LatLng(-89, 179.999),
+      const LatLng(89, 179.99999),
+      const LatLng(-89, 179.99999),
     ];
     final outerWest = <LatLng>[
       const LatLng(-89.9, 0),
       const LatLng(89.9, 0),
-      const LatLng(89.9, -179.999),
-      const LatLng(-89.9, -179.999),
+      const LatLng(89.9, -179.99999),
+      const LatLng(-89.9, -179.99999),
     ];
 
-    final List<List<LatLng>> holeEast = [];
-    final List<List<LatLng>> holeWest = [];
-
-    List<LatLng> current = [];
-    bool? currentEast;
+    final holeEast = <LatLng>[];
+    final holeWest = <LatLng>[];
 
     LatLng first = boundary.first;
     LatLng prev = first;
-    currentEast = prev.longitude >= 0;
-    current.add(prev);
+    bool prevEast = prev.longitude >= 0;
 
     for (int i = 1; i <= boundary.length; i++) {
       final LatLng curr = (i == boundary.length) ? first : boundary[i];
-      final bool currIsEast = curr.longitude >= 0;
-      if (currIsEast == currentEast) {
-        current.add(curr);
-      } else {
-        // crossing longitude=0 → interpolate
-        final double t =
-            (0 - prev.longitude) / (curr.longitude - prev.longitude);
-        final double latAtZero =
-            prev.latitude + t * (curr.latitude - prev.latitude);
-        final LatLng cross = LatLng(latAtZero, 0);
+      final bool currEast = curr.longitude >= 0;
 
-        current.add(cross);
-        if (currentEast == true) {
-          holeEast.add(List.from(current));
-        } else {
-          holeWest.add(List.from(current));
+      if (prevEast) {
+        holeEast.add(prev);
+      } else {
+        holeWest.add(prev);
+      }
+
+      if (currEast != prevEast) {
+        // Check for crossing at lng=0
+        if ((prev.longitude < 0 && prev.longitude >= -90 && curr.longitude >= 0) ||
+            (prev.longitude < 0 && curr.longitude >= 0 && curr.longitude < 90) ||
+            (prev.longitude >= 0 && prev.longitude < 90 && curr.longitude < 0) ||
+            (prev.longitude >= 0 && curr.longitude < 0 && curr.longitude >= -90)) {
+          final cross = _interpolateCrossing(prev, curr, 0);
+          holeEast.add(cross);
+          holeWest.add(cross);
         }
 
-        // start new
-        current = [cross, curr];
-        currentEast = currIsEast;
+        // Check for crossing at lng=±180
+        else if ((prev.longitude < 180 && prev.longitude >= 90 && curr.longitude >= -180) ||
+            (prev.longitude < 180 && curr.longitude >= -180 && curr.longitude < -90) ||
+            (prev.longitude >= -180 && prev.longitude < -90 && curr.longitude < 180) ||
+            (prev.longitude >= -180 && curr.longitude < 180 && curr.longitude >= 90)) {
+          final cross = _interpolateCrossing(prev, curr, -180);
+          holeEast.add(LatLng(cross.latitude, 179.99999));
+          holeWest.add(cross);
+        }
       }
-      prev = curr;
-    }
 
-    if (current.length >= 3) {
-      if (currentEast == true) {
-        holeEast.add(current);
-      } else {
-        holeWest.add(current);
-      }
+      prev = curr;
+      prevEast = currEast;
     }
 
     return {
       Polygon(
         polygonId: const PolygonId('overlay_east'),
         points: outerEast,
-        holes: holeEast,
+        holes: [holeEast],
         fillColor: Colors.black.withAlpha(128), // 50%,
         strokeColor: Colors.transparent,
       ),
       Polygon(
         polygonId: const PolygonId('overlay_west'),
         points: outerWest,
-        holes: holeWest,
+        holes: [holeWest],
         fillColor: Colors.black.withAlpha(128), // 50%,
         strokeColor: Colors.transparent,
       ),
     };
+  }
+
+  /// Linear interpolation for latitude at a crossing longitude
+  static LatLng _interpolateCrossing(LatLng a, LatLng b, double lngTarget) {
+    final double t = (lngTarget - a.longitude) / (b.longitude - a.longitude);
+    final double lat = a.latitude + t * (b.latitude - a.latitude);
+    return LatLng(lat, lngTarget);
   }
 }
