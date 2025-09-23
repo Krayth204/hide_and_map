@@ -31,12 +31,12 @@
 
   <title>Hide and Map</title>
   <link rel="manifest" href="manifest.json">
-  
+
   <!-- Google Maps API injection -->
   <script>
     (function() {
       var key = "__GOOGLE_MAPS_API_KEY__"; // placeholder, replaced at build time
-      if (key && key !== "__GOOGLE_MAPS_API_KEY__") {
+      if (key) {
         var s = document.createElement('script');
         s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(key);
         s.async = true;
