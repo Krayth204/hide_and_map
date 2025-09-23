@@ -1,0 +1,27 @@
+name: Deploy Flutter Web to GitHub Pages
+
+on:
+  push:
+    branches: [ release/web ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.3'
+
+      - run: flutter build web --release
+
+      - name: Create secret_config.json
+        run: |
+          echo '{ "GOOGLE_MAPS_API_KEY": "${{ secrets.GOOGLE_MAPS_API_KEY }}" }' > build/web/secret_config.json
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
