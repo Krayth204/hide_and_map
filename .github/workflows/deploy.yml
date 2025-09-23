@@ -14,7 +14,7 @@ jobs:
         with:
           flutter-version: '3.35.3'
 
-      - run: flutter build web --release
+      - run: flutter build web --release --base-href /hide_and_map/
 
       # Inject the API key into index.html (replace placeholder)
       - name: Inject Google Maps API Key
