@@ -16,9 +16,10 @@ jobs:
 
       - run: flutter build web --release
 
-      - name: Create secret_config.json
+      # Inject the API key into index.html (replace placeholder)
+      - name: Inject Google Maps API Key
         run: |
-          echo '{ "GOOGLE_MAPS_API_KEY": "${{ secrets.GOOGLE_MAPS_API_KEY }}" }' > build/web/secret_config.json
+          sed -i "s|__GOOGLE_MAPS_API_KEY__|${{ secrets.GOOGLE_MAPS_API_KEY }}|g" build/web/index.html
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3

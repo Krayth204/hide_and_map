@@ -23,7 +23,7 @@
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="hide_and_map">
+  <meta name="apple-mobile-web-app-title" content="Hide and Map">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
@@ -31,37 +31,19 @@
 
   <title>Hide and Map</title>
   <link rel="manifest" href="manifest.json">
-  <!--
-    Boot loader: fetch local, gitignored `web/secret_config.json` to obtain
-    GOOGLE_MAPS_API_KEY, then inject the Maps JavaScript API script tag.
-
-    This keeps the API key out of version control. Create `web/secret_config.json`
-    (use `web/secret_config.example.json` as a template) with:
-    {
-      "GOOGLE_MAPS_API_KEY": "YOUR_KEY_HERE"
-    }
-  -->
+  
+  <!-- Google Maps API injection -->
   <script>
     (function() {
-      try {
-        fetch('/secret_config.json')
-          .then(function(r) { if (!r.ok) throw new Error('no config'); return r.json(); })
-          .then(function(cfg) {
-            var key = cfg && cfg.GOOGLE_MAPS_API_KEY;
-            if (key) {
-              var s = document.createElement('script');
-              s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(key);
-              s.async = true; s.defer = true;
-              document.head.appendChild(s);
-            } else {
-              console.warn('GOOGLE_MAPS_API_KEY not found in secret_config.json; Google Maps will not load.');
-            }
-          })
-          .catch(function() {
-            console.warn('No secret_config.json found; Google Maps not loaded.');
-          });
-      } catch (e) {
-        console.warn('Error loading secret_config.json', e);
+      var key = "__GOOGLE_MAPS_API_KEY__"; // placeholder, replaced at build time
+      if (key && key !== "__GOOGLE_MAPS_API_KEY__") {
+        var s = document.createElement('script');
+        s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(key);
+        s.async = true;
+        s.defer = true;
+        document.head.appendChild(s);
+      } else {
+        console.warn('No API key provided, Google Maps will not load.');
       }
     })();
   </script>
