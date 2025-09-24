@@ -42,6 +42,7 @@ class _MapScreenState extends State<MapScreen> {
 
   final PlayAreaSelectorController _selectorController = PlayAreaSelectorController();
   ShapeController? _activeShapeController;
+  bool _isBottomSheetOpen = false;
 
   @override
   void initState() {
@@ -107,6 +108,9 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onShapeTapped(String id) {
+    if (_isBottomSheetOpen) return; // <-- Prevent opening multiple sheets
+    _isBottomSheetOpen = true;
+
     final shape = gameState.shapes.firstWhere((s) => s.id == id);
 
     showModalBottomSheet(
@@ -141,7 +145,11 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
       },
-    );
+    ).whenComplete(() {
+      Future.delayed(Duration(milliseconds: 300), () {
+        _isBottomSheetOpen = false;
+      });
+    });
   }
 
   void _editShape(Shape shape) {
