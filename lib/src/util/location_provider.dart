@@ -6,7 +6,7 @@ import 'package:location/location.dart';
 abstract class LocationProvider {
   static bool _locationAvailable = false;
   static final Location _location = Location();
-  static LatLng _lastLocation = LatLng(0, 0);
+  static LatLng lastLocation = LatLng(0, 0);
 
   static Future<bool> requestPermission() async {
     bool serviceEnabled;
@@ -54,7 +54,7 @@ abstract class LocationProvider {
           currentLocation.longitude!,
         );
         if (_movedSignificantly(newLocation)) {
-          _lastLocation = newLocation;
+          lastLocation = newLocation;
           onChanged(newLocation);
         }
       }
@@ -62,7 +62,7 @@ abstract class LocationProvider {
   }
   
   static bool _movedSignificantly(LatLng newLocation) {
-    final dist = GeoMath.distanceInMeters(_lastLocation, newLocation);
+    final dist = GeoMath.distanceInMeters(lastLocation, newLocation);
     return dist > 10;
   }
 }
