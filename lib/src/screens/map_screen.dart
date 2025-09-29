@@ -1,8 +1,8 @@
 import 'dart:collection';
-import 'dart:math';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:hide_and_map/src/models/shape/shape_factory.dart';
 import 'package:hide_and_map/src/util/color_helper.dart';
 import 'package:hide_and_map/src/widgets/shape/shape_popup.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
@@ -71,6 +71,8 @@ class _MapScreenState extends State<MapScreen> {
 
   void _loadGameState(GameState gS) {
     _activeShapeController = null;
+    _editingShapeId = null;
+    _editingShapeColor = null;
     _polygons = PlayArea.buildOverlay(gS.playArea);
     setState(() {
       gameState = gS;
@@ -98,16 +100,14 @@ class _MapScreenState extends State<MapScreen> {
 
   void _openAddShape(ShapeType type) {
     _closeActiveAdd();
+    var shape = ShapeFactory.createShape(type, gameState.playArea!);
     setState(() {
-      _activeShapeController = ShapeController(type);
+      _activeShapeController = ShapeController(shape);
       if (type == ShapeType.circle) {
         LocationProvider.getLocation().then(
           (latLng) => {
             if (_activeShapeController != null && latLng != null)
-              {
-                if (_activeShapeController!.center == null)
-                  {_activeShapeController!.onMapTap(latLng)},
-              },
+              {_activeShapeController!.onMapTap(latLng)},
           },
         );
       }
@@ -140,8 +140,6 @@ class _MapScreenState extends State<MapScreen> {
                   title: const Text('Edit'),
                   onTap: () {
                     Navigator.pop(context);
-                    _editingShapeColor = ColorHelper.copyMaterialColor(shape.color);
-                    shape.color = Colors.grey;
                     _editShape(shape);
                   },
                 ),
@@ -168,27 +166,13 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _editShape(Shape shape) {
+    _editingShapeColor = ColorHelper.copyMaterialColor(shape.color);
     _editingShapeId = shape.id;
-    _activeShapeController = ShapeController(shape.type)
-      ..edit = true
-      ..color = _editingShapeColor!;
+    _activeShapeController = ShapeController(ShapeFactory.copy(shape), edit: true);
 
-    switch (shape.type) {
-      case ShapeType.circle:
-        _activeShapeController!.center = shape.center;
-        _activeShapeController!.radius = shape.radius ?? 500;
-        break;
-      case ShapeType.line:
-      case ShapeType.polygon:
-        _activeShapeController!.points = shape.points != null
-            ? List.from(shape.points!)
-            : [];
-        break;
-    }
-
-    _activeShapeController!.inverted = shape.inverted;
-
-    setState(() {});
+    setState(() {
+      shape.color = Colors.grey;
+    });
   }
 
   @override
@@ -350,7 +334,6 @@ class _MapScreenState extends State<MapScreen> {
                     markerId: MarkerId('locationMarker'),
                     position: _locationForWeb!,
                     icon: _iconForWeb!,
-                    flat: true,
                   ),
                 );
               }
@@ -458,12 +441,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onConfirmShape(ShapeController controller) {
-    int rand = Random().nextInt(1000);
-    final id =
-        _editingShapeId ??
-        '${controller.type.name[0]}${DateTime.now().millisecondsSinceEpoch % 1000000}$rand';
-    final shape = controller.buildShape(id);
-    if (shape == null) return;
+    final shape = controller.shape;
 
     setState(() {
       if (_editingShapeId != null) {
@@ -550,6 +528,8 @@ class _MapScreenState extends State<MapScreen> {
                     gameState = GameState();
                     _polygons.clear();
                     _activeShapeController = null;
+                    _editingShapeId = null;
+                    _editingShapeColor = null;
                   });
                   GameState.saveGameState(gameState);
                   Navigator.of(context).pop();
