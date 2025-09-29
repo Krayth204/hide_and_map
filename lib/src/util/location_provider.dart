@@ -1,10 +1,12 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:hide_and_map/src/util/geo_math.dart';
 import 'package:location/location.dart';
 
 abstract class LocationProvider {
   static bool _locationAvailable = false;
   static final Location _location = Location();
+  static LatLng _lastLocation = LatLng(0, 0);
 
   static Future<bool> requestPermission() async {
     bool serviceEnabled;
@@ -46,9 +48,21 @@ abstract class LocationProvider {
   static void onLocationChanged(Function(LatLng) onChanged) {
     if (!_locationAvailable) return;
     _location.onLocationChanged.listen((LocationData currentLocation) {
-      if (currentLocation.latitude != null || currentLocation.longitude != null) {
-        onChanged(LatLng(currentLocation.latitude!, currentLocation.longitude!));
+      if (currentLocation.latitude != null && currentLocation.longitude != null) {
+        LatLng newLocation = LatLng(
+          currentLocation.latitude!,
+          currentLocation.longitude!,
+        );
+        if (_movedSignificantly(newLocation)) {
+          _lastLocation = newLocation;
+          onChanged(newLocation);
+        }
       }
     });
+  }
+  
+  static bool _movedSignificantly(LatLng newLocation) {
+    final dist = GeoMath.distanceInMeters(_lastLocation, newLocation);
+    return dist > 10;
   }
 }
