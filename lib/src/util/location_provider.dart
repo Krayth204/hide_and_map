@@ -10,7 +10,7 @@ abstract class LocationProvider {
     bool serviceEnabled;
     PermissionStatus permissionGranted;
 
-    if(kIsWeb) {
+    if (kIsWeb) {
       _locationAvailable = true;
       await getLocation();
       return true;
@@ -41,5 +41,14 @@ abstract class LocationProvider {
       return Future.value(null);
     }
     return Future.value(LatLng(locationData.latitude!, locationData.longitude!));
+  }
+
+  static void onLocationChanged(Function(LatLng) onChanged) {
+    if (!_locationAvailable) return;
+    _location.onLocationChanged.listen((LocationData currentLocation) {
+      if (currentLocation.latitude != null || currentLocation.longitude != null) {
+        onChanged(LatLng(currentLocation.latitude!, currentLocation.longitude!));
+      }
+    });
   }
 }

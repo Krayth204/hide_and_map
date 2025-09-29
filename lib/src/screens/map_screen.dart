@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:math';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hide_and_map/src/util/color_helper.dart';
@@ -39,6 +40,8 @@ class _MapScreenState extends State<MapScreen> {
   Set<Polygon> _polygons = HashSet<Polygon>();
   String? _editingShapeId;
   MaterialColor? _editingShapeColor;
+  LatLng? _locationForWeb;
+  BitmapDescriptor? _iconForWeb;
 
   final PlayAreaSelectorController _selectorController = PlayAreaSelectorController();
   ShapeController? _activeShapeController;
@@ -52,6 +55,18 @@ class _MapScreenState extends State<MapScreen> {
         if (gS.playArea != null) {_loadGameState(gS)},
       },
     );
+    if (kIsWeb) {
+      BitmapDescriptor.asset(
+        ImageConfiguration(size: Size(16, 16)),
+        'assets/markers/blue_marker.png',
+      ).then(
+        (asset) => {
+          setState(() {
+            _iconForWeb = asset;
+          }),
+        },
+      );
+    }
   }
 
   void _loadGameState(GameState gS) {
@@ -329,6 +344,17 @@ class _MapScreenState extends State<MapScreen> {
                 }
               }
 
+              if (kIsWeb && _locationForWeb != null && _iconForWeb != null) {
+                markersToShow.add(
+                  Marker(
+                    markerId: MarkerId('locationMarker'),
+                    position: _locationForWeb!,
+                    icon: _iconForWeb!,
+                    flat: true,
+                  ),
+                );
+              }
+
               return GoogleMap(
                 initialCameraPosition: _initialCamera,
                 style: mapStyle,
@@ -378,6 +404,26 @@ class _MapScreenState extends State<MapScreen> {
                       child: _buildShapePopup(_activeShapeController!),
                     ),
                   ],
+                ),
+              ),
+            ),
+
+          if (kIsWeb && _locationForWeb != null)
+            Positioned(
+              bottom: 16,
+              left: 16,
+              child: PointerInterceptor(
+                child: FloatingActionButton(
+                  heroTag: 'webLocationFab',
+                  onPressed: () {
+                    if (_controller != null) {
+                      _controller!.animateCamera(
+                        CameraUpdate.newLatLng(_locationForWeb!),
+                      );
+                    }
+                  },
+                  backgroundColor: Colors.blueAccent,
+                  child: const Icon(Icons.my_location),
                 ),
               ),
             ),
@@ -461,6 +507,16 @@ class _MapScreenState extends State<MapScreen> {
                               ),
                             ),
                           },
+                      },
+                    ),
+                  },
+                if (kIsWeb)
+                  {
+                    LocationProvider.onLocationChanged(
+                      (location) => {
+                        setState(() {
+                          _locationForWeb = location;
+                        }),
                       },
                     ),
                   },
