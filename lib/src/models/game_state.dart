@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:archive/archive.dart';
+import 'package:hide_and_map/src/models/shape/shape_factory.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'play_area/play_area.dart';
 import 'shape/shape.dart';
@@ -33,7 +34,7 @@ class GameState {
 
   static GameState _fromJson(Map<String, dynamic> json) => GameState(
     playArea: json['pA'] != null ? PlayArea.fromJson(json['pA']) : null,
-    shapes: (json['sh'] as List).map((s) => Shape.fromJson(s)).toList(),
+    shapes: (json['sh'] as List).map((s) => ShapeFactory.fromJson(s)).toList(),
   );
 
   static GameState decodeGameState(String stored) {

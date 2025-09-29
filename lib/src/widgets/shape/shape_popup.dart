@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hide_and_map/src/models/shape/circle_shape.dart';
 import '../../models/shape/shape.dart';
 import '../../models/shape/shape_controller.dart';
 import '../../util/color_helper.dart';
@@ -31,27 +32,26 @@ class ShapePopup extends StatelessWidget {
         child: AnimatedBuilder(
           animation: controller,
           builder: (_, __) {
-            switch (controller.type) {
+            var shape = controller.shape;
+            switch (shape.type) {
               case ShapeType.circle:
                 title = controller.edit ? 'Edit Circle' : 'Add Circle';
                 instructions = 'Tap map to set center. Drag marker to adjust.';
-                canConfirm = controller.center != null;
                 showInvertedCheckbox = true;
                 break;
               case ShapeType.line:
                 title = controller.edit ? 'Edit Line' : 'Add Line';
                 instructions = 'Tap map to add points. Drag points to move.';
-                canConfirm = controller.points.length >= 2;
                 showUndoReset = true;
                 break;
               case ShapeType.polygon:
                 title = controller.edit ? 'Edit Polygon' : 'Add Polygon';
                 instructions = 'Tap map to add points. Drag markers to move.';
-                canConfirm = controller.points.length >= 3;
                 showUndoReset = true;
                 showInvertedCheckbox = true;
                 break;
             }
+            canConfirm = shape.canConfirm();
 
             return Column(
               mainAxisSize: MainAxisSize.min,
@@ -71,7 +71,7 @@ class ShapePopup extends StatelessWidget {
                         final selected = await showDialog<MaterialColor>(
                           context: context,
                           builder: (_) => ColorPickerOverlay(
-                            current: controller.color,
+                            current: shape.color,
                             available: ColorHelper.availableColors,
                           ),
                         );
@@ -84,7 +84,7 @@ class ShapePopup extends StatelessWidget {
                         height: 24,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: controller.color,
+                          color: shape.color,
                           border: Border.all(color: Colors.black54, width: 1),
                         ),
                       ),
@@ -94,17 +94,17 @@ class ShapePopup extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(instructions),
                 const SizedBox(height: 8),
-                if (controller.type == ShapeType.circle)
+                if (shape is CircleShape)
                   Row(
                     children: [
                       const Text('Radius (m):'),
                       Expanded(
                         child: Slider(
-                          value: controller.radius.clamp(500, 50000),
+                          value: shape.radius.clamp(500, 50000),
                           min: 500,
                           max: 50000,
                           divisions: 99,
-                          label: controller.radius.round().toString(),
+                          label: shape.radius.round().toString(),
                           onChanged: (v) => controller.setRadius(v),
                         ),
                       ),
@@ -113,9 +113,9 @@ class ShapePopup extends StatelessWidget {
                         child: TextField(
                           keyboardType: TextInputType.number,
                           controller: TextEditingController(
-                            text: controller.radius.round().toString(),
+                            text: shape.radius.round().toString(),
                           ),
-                          onSubmitted: (s) {
+                          onChanged: (s) {
                             final v = double.tryParse(s);
                             if (v != null) controller.setRadius(v);
                           },
@@ -143,7 +143,7 @@ class ShapePopup extends StatelessWidget {
                   Row(
                     children: [
                       Checkbox(
-                        value: controller.inverted,
+                        value: shape.inverted,
                         onChanged: (v) => controller.setInverted(v ?? false),
                       ),
                       const Text('Invert (cover outside of shape)'),
