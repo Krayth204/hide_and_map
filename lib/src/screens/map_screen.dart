@@ -1,7 +1,8 @@
 import 'dart:collection';
-import 'dart:math';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:hide_and_map/src/models/shape/shape_factory.dart';
 import 'package:hide_and_map/src/util/color_helper.dart';
 import 'package:hide_and_map/src/widgets/shape/shape_popup.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
@@ -39,6 +40,8 @@ class _MapScreenState extends State<MapScreen> {
   Set<Polygon> _polygons = HashSet<Polygon>();
   String? _editingShapeId;
   MaterialColor? _editingShapeColor;
+  LatLng? _locationForWeb;
+  BitmapDescriptor? _iconForWeb;
 
   final PlayAreaSelectorController _selectorController = PlayAreaSelectorController();
   ShapeController? _activeShapeController;
@@ -52,10 +55,24 @@ class _MapScreenState extends State<MapScreen> {
         if (gS.playArea != null) {_loadGameState(gS)},
       },
     );
+    if (kIsWeb) {
+      BitmapDescriptor.asset(
+        ImageConfiguration(size: Size(16, 16)),
+        'assets/markers/blue_marker.png',
+      ).then(
+        (asset) => {
+          setState(() {
+            _iconForWeb = asset;
+          }),
+        },
+      );
+    }
   }
 
   void _loadGameState(GameState gS) {
     _activeShapeController = null;
+    _editingShapeId = null;
+    _editingShapeColor = null;
     _polygons = PlayArea.buildOverlay(gS.playArea);
     setState(() {
       gameState = gS;
@@ -83,18 +100,14 @@ class _MapScreenState extends State<MapScreen> {
 
   void _openAddShape(ShapeType type) {
     _closeActiveAdd();
+    var shape = ShapeFactory.createShape(type, gameState.playArea!);
     setState(() {
-      _activeShapeController = ShapeController(type);
-      if (type == ShapeType.circle) {
-        LocationProvider.getLocation().then(
-          (latLng) => {
-            if (_activeShapeController != null && latLng != null)
-              {
-                if (_activeShapeController!.center == null)
-                  {_activeShapeController!.onMapTap(latLng)},
-              },
-          },
-        );
+      _activeShapeController = ShapeController(shape);
+      if (type == ShapeType.circle || type == ShapeType.thermometer) {
+        if (LocationProvider.lastLocation.latitude != 0.0 &&
+            LocationProvider.lastLocation.longitude != 0.0) {
+          _activeShapeController!.onMapTap(LocationProvider.lastLocation);
+        }
       }
     });
   }
@@ -125,8 +138,6 @@ class _MapScreenState extends State<MapScreen> {
                   title: const Text('Edit'),
                   onTap: () {
                     Navigator.pop(context);
-                    _editingShapeColor = ColorHelper.copyMaterialColor(shape.color);
-                    shape.color = Colors.grey;
                     _editShape(shape);
                   },
                 ),
@@ -153,27 +164,13 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _editShape(Shape shape) {
+    _editingShapeColor = ColorHelper.copyMaterialColor(shape.color);
     _editingShapeId = shape.id;
-    _activeShapeController = ShapeController(shape.type)
-      ..edit = true
-      ..color = _editingShapeColor!;
+    _activeShapeController = ShapeController(ShapeFactory.copy(shape), edit: true);
 
-    switch (shape.type) {
-      case ShapeType.circle:
-        _activeShapeController!.center = shape.center;
-        _activeShapeController!.radius = shape.radius ?? 500;
-        break;
-      case ShapeType.line:
-      case ShapeType.polygon:
-        _activeShapeController!.points = shape.points != null
-            ? List.from(shape.points!)
-            : [];
-        break;
-    }
-
-    _activeShapeController!.inverted = shape.inverted;
-
-    setState(() {});
+    setState(() {
+      shape.color = Colors.grey;
+    });
   }
 
   @override
@@ -271,6 +268,13 @@ class _MapScreenState extends State<MapScreen> {
                 ),
                 PointerInterceptor(
                   child: FloatingActionButton(
+                    onPressed: () => _openAddShape(ShapeType.thermometer),
+                    tooltip: 'Add Thermometer',
+                    child: const Icon(Icons.thermostat),
+                  ),
+                ),
+                PointerInterceptor(
+                  child: FloatingActionButton(
                     onPressed: () => _openAddShape(ShapeType.line),
                     tooltip: 'Add Line',
                     child: const Icon(Icons.show_chart),
@@ -329,6 +333,17 @@ class _MapScreenState extends State<MapScreen> {
                 }
               }
 
+              if (kIsWeb && _locationForWeb != null && _iconForWeb != null) {
+                markersToShow.add(
+                  Marker(
+                    markerId: MarkerId('locationMarker'),
+                    position: _locationForWeb!,
+                    icon: _iconForWeb!,
+                    onTap: () => _onMapTap(_locationForWeb!),
+                  ),
+                );
+              }
+
               return GoogleMap(
                 initialCameraPosition: _initialCamera,
                 style: mapStyle,
@@ -381,6 +396,26 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ),
+
+          if (kIsWeb && _locationForWeb != null)
+            Positioned(
+              bottom: 16,
+              left: 16,
+              child: PointerInterceptor(
+                child: FloatingActionButton(
+                  heroTag: 'webLocationFab',
+                  onPressed: () {
+                    if (_controller != null) {
+                      _controller!.animateCamera(
+                        CameraUpdate.newLatLng(_locationForWeb!),
+                      );
+                    }
+                  },
+                  backgroundColor: Colors.blueAccent,
+                  child: const Icon(Icons.my_location),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -412,12 +447,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onConfirmShape(ShapeController controller) {
-    int rand = Random().nextInt(1000);
-    final id =
-        _editingShapeId ??
-        '${controller.type.name[0]}${DateTime.now().millisecondsSinceEpoch % 1000000}$rand';
-    final shape = controller.buildShape(id);
-    if (shape == null) return;
+    final shape = controller.shape;
 
     setState(() {
       if (_editingShapeId != null) {
@@ -464,11 +494,22 @@ class _MapScreenState extends State<MapScreen> {
                       },
                     ),
                   },
+                LocationProvider.onLocationChanged(
+                  (location) => _onLocationChanged(location),
+                ),
               },
           },
         ),
       },
     );
+  }
+
+  void _onLocationChanged(LatLng location) {
+    if (kIsWeb) {
+      setState(() {
+        _locationForWeb = location;
+      });
+    }
   }
 
   void _showResetDialog() {
@@ -494,6 +535,8 @@ class _MapScreenState extends State<MapScreen> {
                     gameState = GameState();
                     _polygons.clear();
                     _activeShapeController = null;
+                    _editingShapeId = null;
+                    _editingShapeColor = null;
                   });
                   GameState.saveGameState(gameState);
                   Navigator.of(context).pop();
