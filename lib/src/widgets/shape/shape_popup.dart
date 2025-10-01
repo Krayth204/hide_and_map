@@ -20,10 +20,11 @@ class ShapePopup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String title;
-    String instructions;
+    String instructions = 'Tap map to add points. Drag markers to move.';
     bool canConfirm;
     bool showUndoReset = false;
     bool showInvertedCheckbox = false;
+    String invertedText = 'Invert (cover outside of shape)';
 
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -41,14 +42,18 @@ class ShapePopup extends StatelessWidget {
                 break;
               case ShapeType.line:
                 title = controller.edit ? 'Edit Line' : 'Add Line';
-                instructions = 'Tap map to add points. Drag points to move.';
                 showUndoReset = true;
                 break;
               case ShapeType.polygon:
                 title = controller.edit ? 'Edit Polygon' : 'Add Polygon';
-                instructions = 'Tap map to add points. Drag markers to move.';
                 showUndoReset = true;
                 showInvertedCheckbox = true;
+                break;
+              case ShapeType.thermometer:
+                title = controller.edit ? 'Edit Thermometer' : 'Add Thermometer';
+                showUndoReset = true;
+                showInvertedCheckbox = true;
+                invertedText = 'Hotter (Hider closer to second point?)';
                 break;
             }
             canConfirm = shape.canConfirm();
@@ -146,7 +151,7 @@ class ShapePopup extends StatelessWidget {
                         value: shape.inverted,
                         onChanged: (v) => controller.setInverted(v ?? false),
                       ),
-                      const Text('Invert (cover outside of shape)'),
+                      Text(invertedText),
                     ],
                   ),
                 ],
