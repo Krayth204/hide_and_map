@@ -109,7 +109,7 @@ class _PlayAreaSelectorState extends State<PlayAreaSelector> {
                           ),
                           keyboardType: TextInputType.number,
                           controller: _radiusController,
-                          onSubmitted: (val) {
+                          onChanged: (val) {
                             final parsed = double.tryParse(val);
                             if (parsed != null) {
                               widget.controller.setRadius(parsed);

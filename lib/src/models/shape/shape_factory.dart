@@ -7,6 +7,7 @@ import 'circle_shape.dart';
 import 'line_shape.dart';
 import 'polygon_shape.dart';
 import 'shape.dart';
+import 'thermometer_shape.dart';
 
 class ShapeFactory {
   static Shape createShape(ShapeType type, PlayArea playArea) {
@@ -19,6 +20,8 @@ class ShapeFactory {
         return LineShape(id, List.empty(growable: true));
       case ShapeType.polygon:
         return PolygonShape(id, List.empty(growable: true));
+      case ShapeType.thermometer:
+        return ThermometerShape(id, List.empty(growable: true));
     }
   }
 
@@ -35,6 +38,13 @@ class ShapeFactory {
       return LineShape(shape.id, [...shape.points], color: shape.color);
     } else if (shape is PolygonShape) {
       return PolygonShape(
+        shape.id,
+        [...shape.points],
+        color: shape.color,
+        inverted: shape.inverted,
+      );
+    } else if (shape is ThermometerShape) {
+      return ThermometerShape(
         shape.id,
         [...shape.points],
         color: shape.color,
@@ -67,6 +77,11 @@ class ShapeFactory {
         final pts = (json['pts'] as List).map((p) => LatLng(p['lat'], p['lng'])).toList();
         final inverted = (json['i'] as String) == 't';
         return PolygonShape(id, pts, color: color, inverted: inverted);
+
+      case ShapeType.thermometer:
+        final pts = (json['pts'] as List).map((p) => LatLng(p['lat'], p['lng'])).toList();
+        final inverted = (json['i'] as String) == 't';
+        return ThermometerShape(id, pts, color: color, inverted: inverted);
     }
   }
 }

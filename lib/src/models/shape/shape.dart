@@ -3,7 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../play_area/play_area.dart';
 import 'shape_object.dart';
 
-enum ShapeType { circle, line, polygon }
+enum ShapeType { circle, line, polygon, thermometer }
 
 abstract class Shape {
   String get id;

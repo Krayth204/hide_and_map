@@ -103,13 +103,11 @@ class _MapScreenState extends State<MapScreen> {
     var shape = ShapeFactory.createShape(type, gameState.playArea!);
     setState(() {
       _activeShapeController = ShapeController(shape);
-      if (type == ShapeType.circle) {
-        LocationProvider.getLocation().then(
-          (latLng) => {
-            if (_activeShapeController != null && latLng != null)
-              {_activeShapeController!.onMapTap(latLng)},
-          },
-        );
+      if (type == ShapeType.circle || type == ShapeType.thermometer) {
+        if (LocationProvider.lastLocation.latitude != 0.0 &&
+            LocationProvider.lastLocation.longitude != 0.0) {
+          _activeShapeController!.onMapTap(LocationProvider.lastLocation);
+        }
       }
     });
   }
@@ -270,6 +268,13 @@ class _MapScreenState extends State<MapScreen> {
                 ),
                 PointerInterceptor(
                   child: FloatingActionButton(
+                    onPressed: () => _openAddShape(ShapeType.thermometer),
+                    tooltip: 'Add Thermometer',
+                    child: const Icon(Icons.thermostat),
+                  ),
+                ),
+                PointerInterceptor(
+                  child: FloatingActionButton(
                     onPressed: () => _openAddShape(ShapeType.line),
                     tooltip: 'Add Line',
                     child: const Icon(Icons.show_chart),
@@ -334,6 +339,7 @@ class _MapScreenState extends State<MapScreen> {
                     markerId: MarkerId('locationMarker'),
                     position: _locationForWeb!,
                     icon: _iconForWeb!,
+                    onTap: () => _onMapTap(_locationForWeb!),
                   ),
                 );
               }
@@ -488,21 +494,22 @@ class _MapScreenState extends State<MapScreen> {
                       },
                     ),
                   },
-                if (kIsWeb)
-                  {
-                    LocationProvider.onLocationChanged(
-                      (location) => {
-                        setState(() {
-                          _locationForWeb = location;
-                        }),
-                      },
-                    ),
-                  },
+                LocationProvider.onLocationChanged(
+                  (location) => _onLocationChanged(location),
+                ),
               },
           },
         ),
       },
     );
+  }
+
+  void _onLocationChanged(LatLng location) {
+    if (kIsWeb) {
+      setState(() {
+        _locationForWeb = location;
+      });
+    }
   }
 
   void _showResetDialog() {
