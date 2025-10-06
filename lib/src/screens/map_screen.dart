@@ -57,7 +57,7 @@ class _MapScreenState extends State<MapScreen> {
     );
     if (kIsWeb) {
       BitmapDescriptor.asset(
-        ImageConfiguration(size: Size(16, 16)),
+        ImageConfiguration(size: const Size(16, 16)),
         'assets/markers/blue_marker.png',
       ).then(
         (asset) => {
@@ -157,7 +157,7 @@ class _MapScreenState extends State<MapScreen> {
         );
       },
     ).whenComplete(() {
-      Future.delayed(Duration(milliseconds: 300), () {
+      Future.delayed(const Duration(milliseconds: 300), () {
         _isBottomSheetOpen = false;
       });
     });
@@ -336,7 +336,7 @@ class _MapScreenState extends State<MapScreen> {
               if (kIsWeb && _locationForWeb != null && _iconForWeb != null) {
                 markersToShow.add(
                   Marker(
-                    markerId: MarkerId('locationMarker'),
+                    markerId: const MarkerId('locationMarker'),
                     position: _locationForWeb!,
                     icon: _iconForWeb!,
                     onTap: () => _onMapTap(_locationForWeb!),
@@ -429,7 +429,7 @@ class _MapScreenState extends State<MapScreen> {
       } else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("Import failed!")));
+        ).showSnackBar(const SnackBar(content: Text("Import failed!")));
       }
     }
   }

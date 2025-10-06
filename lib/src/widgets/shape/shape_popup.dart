@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hide_and_map/src/models/shape/circle_shape.dart';
+import 'package:hide_and_map/src/util/geo_math.dart';
 import '../../models/shape/shape.dart';
 import '../../models/shape/shape_controller.dart';
 import '../../util/color_helper.dart';
@@ -24,6 +25,7 @@ class ShapePopup extends StatelessWidget {
     bool canConfirm;
     bool showUndoReset = false;
     bool showInvertedCheckbox = false;
+    bool showDistance = false;
     String invertedText = 'Invert (cover outside of shape)';
 
     return Card(
@@ -43,6 +45,7 @@ class ShapePopup extends StatelessWidget {
               case ShapeType.line:
                 title = controller.edit ? 'Edit Line' : 'Add Line';
                 showUndoReset = true;
+                showDistance = true;
                 break;
               case ShapeType.polygon:
                 title = controller.edit ? 'Edit Polygon' : 'Add Polygon';
@@ -53,6 +56,7 @@ class ShapePopup extends StatelessWidget {
                 title = controller.edit ? 'Edit Thermometer' : 'Add Thermometer';
                 showUndoReset = true;
                 showInvertedCheckbox = true;
+                showDistance = true;
                 invertedText = 'Hotter (Hider closer to second point?)';
                 break;
             }
@@ -157,8 +161,18 @@ class ShapePopup extends StatelessWidget {
                 ],
                 const SizedBox(height: 8),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    Expanded(
+                      child: (showDistance)
+                          ? Center(
+                              child: Text(
+                                GeoMath.toDistanceString(shape.getDistance()),
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    const SizedBox(width: 8),
                     TextButton(onPressed: onCancel, child: const Text('Cancel')),
                     const SizedBox(width: 8),
                     ElevatedButton(

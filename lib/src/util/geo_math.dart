@@ -25,6 +25,17 @@ abstract class GeoMath {
 
   static double _degToRad(double deg) => deg * pi / 180.0;
 
+  static String toDistanceString(double d) {
+    if (d < 1000) {
+      return '${d.round()}m';
+    }
+    if (d < 10000) {
+      return '${(d / 1000).toStringAsFixed(1)}km';
+    } else {
+      return '${(d / 1000).round()}km';
+    }
+  }
+
   static List<LatLng> pointsOfCircle(LatLng center, double radiusMeters) {
     final points = <LatLng>[];
     const steps = 64;

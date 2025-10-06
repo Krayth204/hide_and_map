@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hide_and_map/src/models/play_area/play_area.dart';
 import 'package:hide_and_map/src/models/shape/shape.dart';
 import 'package:hide_and_map/src/models/shape/shape_object.dart';
+import 'package:hide_and_map/src/util/location_provider.dart';
 
 import '../../util/color_helper.dart';
 import '../../util/geo_math.dart';
@@ -21,13 +22,16 @@ class ThermometerShape implements Shape {
   bool inverted;
 
   final List<LatLng> points;
+  double distance = 0;
 
   ThermometerShape(
     this.id,
     this.points, {
     this.color = Colors.blue,
     this.inverted = false,
-  });
+  }) {
+    _calculateDistance();
+  }
 
   @override
   void addPoint(LatLng p) {
@@ -36,16 +40,29 @@ class ThermometerShape implements Shape {
     } else {
       points[1] = p;
     }
+    _calculateDistance();
+  }
+
+  void _calculateDistance() {
+    if (points.isEmpty) {
+      distance = 0;
+    } else if (points.length == 1) {
+      distance = GeoMath.distanceInMeters(points[0], LocationProvider.lastLocation);
+    } else {
+      distance = GeoMath.distanceInMeters(points[0], points[1]);
+    }
   }
 
   @override
   void undo() {
     if (points.isNotEmpty) points.removeLast();
+    _calculateDistance();
   }
 
   @override
   void reset() {
     points.clear();
+    _calculateDistance();
   }
 
   @override
@@ -56,6 +73,11 @@ class ThermometerShape implements Shape {
   @override
   bool canConfirm() {
     return points.length == 2;
+  }
+
+  @override
+  double getDistance() {
+    return distance;
   }
 
   @override
@@ -128,6 +150,7 @@ class ThermometerShape implements Shape {
           draggable: true,
           onDragEnd: (p) {
             points[i] = p;
+            _calculateDistance();
             notify();
           },
           icon: ColorHelper.hueFromMaterialColor(color),
