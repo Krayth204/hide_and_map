@@ -45,6 +45,7 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.0.1
   flutter_launcher_icons: ^0.14.4
+  http: ^1.5.0
 
 flutter_launcher_icons:
   android: true
@@ -73,6 +74,8 @@ flutter:
   assets:
     - assets/map_style.json
     - assets/markers/blue_marker.png
+    - assets/markers/train_station_marker.png
+    - assets/markers/subway_station_marker.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
