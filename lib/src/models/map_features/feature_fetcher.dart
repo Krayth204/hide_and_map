@@ -13,7 +13,7 @@ class FeatureFetcher {
 
     final query =
         """
-      [out:json][timeout:25];
+      [out:json][timeout:300];
       (
         node["railway"="station"](poly:"$polygonQuery");
         node["station"="subway"](poly:"$polygonQuery");
