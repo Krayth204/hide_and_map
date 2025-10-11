@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../circle_controller.dart';
 import '../play_area/play_area.dart';
+import 'circle_shape.dart';
 import 'shape.dart';
 import 'shape_object.dart';
 
-class ShapeController extends ChangeNotifier {
+class ShapeController extends ChangeNotifier implements CircleController {
   bool edit;
   Shape shape;
 
@@ -35,9 +37,16 @@ class ShapeController extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
   void setRadius(double r) {
     shape.setRadius(r);
     notifyListeners();
+  }
+
+  @override
+  double getRadius() {
+    if (shape is CircleShape) return (shape as CircleShape).radius;
+    return 0;
   }
 
   ShapeObject getPreviewShapeObject(PlayArea playArea) {

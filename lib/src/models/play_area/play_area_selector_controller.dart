@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../circle_controller.dart';
 import 'circle_play_area.dart';
 import 'play_area.dart';
 import 'polygon_play_area.dart';
 
 enum SelectionMode { circle, polygon }
 
-class PlayAreaSelectorController extends ChangeNotifier {
+class PlayAreaSelectorController extends ChangeNotifier implements CircleController {
   SelectionMode mode = SelectionMode.circle;
 
   // Circle state
@@ -87,9 +88,15 @@ class PlayAreaSelectorController extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
   void setRadius(double radius) {
     circleRadius = radius;
     notifyListeners();
+  }
+
+  @override
+  double getRadius() {
+    return circleRadius;
   }
 
   void onMapTap(LatLng point) {
