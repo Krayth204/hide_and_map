@@ -345,6 +345,7 @@ class _MapScreenState extends State<MapScreen> {
               markersToShow.addAll(
                 _featuresController.getMarkers(tapable: !_isEditable(), onTap: _onMapTap),
               );
+              polygonsToShow.addAll(_featuresController.getPolygons());
 
               if (kIsWeb && _locationForWeb != null && _iconForWeb != null) {
                 markersToShow.add(
