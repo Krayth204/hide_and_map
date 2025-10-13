@@ -3,12 +3,14 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 class MapPOI {
   final String id;
   final String name;
+  final String? nameEn;
   final LatLng center;
   final List<LatLng>? boundary;
 
   const MapPOI({
     required this.id,
     required this.name,
+    this.nameEn,
     required this.center,
     this.boundary,
   });
@@ -17,11 +19,13 @@ class MapPOI {
     final id = e['id'].toString();
     final tags = (e['tags'] as Map?)?.cast<String, String>();
     final name = tags?['name'] ?? 'Unnamed POI';
+    final nameEn = tags?['name:en'];
 
     if (e['type'] == 'node' && e['lat'] != null && e['lon'] != null) {
       return MapPOI(
         id: id,
         name: name,
+        nameEn: nameEn,
         center: LatLng(e['lat'], e['lon']),
       );
     }
@@ -33,10 +37,7 @@ class MapPOI {
       final maxLat = bounds['maxlat'];
       final maxLon = bounds['maxlon'];
 
-      final center = LatLng(
-        (minLat + maxLat) / 2,
-        (minLon + maxLon) / 2,
-      );
+      final center = LatLng((minLat + maxLat) / 2, (minLon + maxLon) / 2);
 
       final geometry = (e['geometry'] as List?)
           ?.map((p) => LatLng(p['lat'], p['lon']))
@@ -45,6 +46,7 @@ class MapPOI {
       return MapPOI(
         id: id,
         name: name,
+        nameEn: nameEn,
         center: center,
         boundary: geometry,
       );
@@ -54,5 +56,6 @@ class MapPOI {
   }
 
   @override
-  String toString() => 'MapPOI(name: $name, center: $center, boundaryPoints: ${boundary?.length ?? 0})';
+  String toString() =>
+      'MapPOI(name: $name, center: $center, boundaryPoints: ${boundary?.length ?? 0})';
 }
