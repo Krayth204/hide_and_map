@@ -2,24 +2,26 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:hide_and_map/src/models/shape/shape_factory.dart';
-import 'package:hide_and_map/src/util/color_helper.dart';
-import 'package:hide_and_map/src/widgets/shape/shape_popup.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 
+import '../../main.dart';
 import '../models/game_state.dart';
 import '../models/map_features/map_features_controller.dart';
 import '../models/play_area/play_area.dart';
 import '../models/play_area/play_area_selector_controller.dart';
+import '../models/shape/shape_factory.dart';
+import '../util/color_helper.dart';
 import '../util/location_provider.dart';
 import '../widgets/import_export/import_dialog.dart';
 import '../widgets/import_export/share_dialog.dart';
 import '../widgets/map_features/map_features_panel.dart';
+import '../widgets/map_type_popup.dart';
 import '../widgets/play_area/play_area_selector.dart';
 
 import '../models/shape/shape_controller.dart';
 import '../models/shape/shape.dart';
+import '../widgets/shape/shape_popup.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -187,6 +189,11 @@ class _MapScreenState extends State<MapScreen> {
       appBar: AppBar(
         title: const Text('Hide and Map'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.map_outlined),
+            iconSize: 32,
+            onPressed: () => MapTypePopup.show(context),
+          ),
           PointerInterceptor(
             child: PopupMenuButton<String>(
               onSelected: (value) {
@@ -302,6 +309,7 @@ class _MapScreenState extends State<MapScreen> {
         children: [
           AnimatedBuilder(
             animation: Listenable.merge([
+              prefs,
               _selectorController,
               _featuresController,
               if (_activeShapeController != null) _activeShapeController!,
@@ -345,6 +353,7 @@ class _MapScreenState extends State<MapScreen> {
               markersToShow.addAll(
                 _featuresController.getMarkers(tapable: !_isEditable(), onTap: _onMapTap),
               );
+              polygonsToShow.addAll(_featuresController.getPolygons());
 
               if (kIsWeb && _locationForWeb != null && _iconForWeb != null) {
                 markersToShow.add(
@@ -359,7 +368,7 @@ class _MapScreenState extends State<MapScreen> {
 
               return GoogleMap(
                 initialCameraPosition: _initialCamera,
-                mapType: MapType.normal,
+                mapType: prefs.mapType,
                 webCameraControlEnabled: false,
                 zoomControlsEnabled: false,
                 myLocationEnabled: true,
