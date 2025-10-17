@@ -1,21 +1,39 @@
+import 'package:google_maps_cluster_manager_2/google_maps_cluster_manager_2.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class MapPOI {
+enum POIType {
+  themePark,
+  zoo,
+  aquarium,
+  golfCourse,
+  museum,
+  movieTheater,
+  hospital,
+  library,
+  consulate,
+}
+
+class MapPOI with ClusterItem {
   final String id;
   final String name;
   final String? nameEn;
   final LatLng center;
   final List<LatLng>? boundary;
+  final POIType type;
 
-  const MapPOI({
+  MapPOI({
     required this.id,
     required this.name,
     this.nameEn,
     required this.center,
     this.boundary,
+    required this.type,
   });
 
-  factory MapPOI.fromOverpassElement(Map<String, dynamic> e) {
+  @override
+  LatLng get location => center;
+
+  factory MapPOI.fromOverpassElement(POIType type, Map<String, dynamic> e) {
     final id = e['id'].toString();
     final tags = (e['tags'] as Map?)?.cast<String, String>();
     final name = tags?['name'] ?? 'Unnamed POI';
@@ -27,6 +45,7 @@ class MapPOI {
         name: name,
         nameEn: nameEn,
         center: LatLng(e['lat'], e['lon']),
+        type: type,
       );
     }
 
@@ -49,6 +68,7 @@ class MapPOI {
         nameEn: nameEn,
         center: center,
         boundary: geometry,
+        type: type,
       );
     }
 

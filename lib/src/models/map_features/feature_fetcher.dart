@@ -41,45 +41,46 @@ class FeatureFetcher {
   }
 
   static Future<List<MapPOI>> fetchThemeParks(List<LatLng> boundary) async {
-    return _fetchGeneric(boundary, 'tourism', 'theme_park');
+    return _fetchGeneric(boundary, 'tourism', 'theme_park', POIType.themePark);
   }
 
   static Future<List<MapPOI>> fetchZoos(List<LatLng> boundary) async {
-    return _fetchGeneric(boundary, 'tourism', 'zoo');
+    return _fetchGeneric(boundary, 'tourism', 'zoo', POIType.zoo);
   }
 
   static Future<List<MapPOI>> fetchAquariums(List<LatLng> boundary) async {
-    return _fetchGeneric(boundary, 'tourism', 'aquarium');
+    return _fetchGeneric(boundary, 'tourism', 'aquarium', POIType.aquarium);
   }
 
   static Future<List<MapPOI>> fetchGolfCourses(List<LatLng> boundary) async {
-    return _fetchGeneric(boundary, 'leisure', 'golf_course');
+    return _fetchGeneric(boundary, 'leisure', 'golf_course', POIType.golfCourse);
   }
 
   static Future<List<MapPOI>> fetchMuseums(List<LatLng> boundary) async {
-    return _fetchGeneric(boundary, 'tourism', 'museum');
+    return _fetchGeneric(boundary, 'tourism', 'museum', POIType.museum);
   }
 
   static Future<List<MapPOI>> fetchMovieTheaters(List<LatLng> boundary) async {
-    return _fetchGeneric(boundary, 'amenity', 'cinema');
+    return _fetchGeneric(boundary, 'amenity', 'cinema', POIType.movieTheater);
   }
 
   static Future<List<MapPOI>> fetchHospitals(List<LatLng> boundary) async {
-    return _fetchGeneric(boundary, 'amenity', 'hospital');
+    return _fetchGeneric(boundary, 'amenity', 'hospital', POIType.hospital);
   }
 
   static Future<List<MapPOI>> fetchLibraries(List<LatLng> boundary) async {
-    return _fetchGeneric(boundary, 'amenity', 'library');
+    return _fetchGeneric(boundary, 'amenity', 'library', POIType.library);
   }
 
   static Future<List<MapPOI>> fetchConsulates(List<LatLng> boundary) async {
-    return _fetchGeneric(boundary, 'diplomatic', 'consulate');
+    return _fetchGeneric(boundary, 'diplomatic', 'consulate', POIType.consulate);
   }
 
   static Future<List<MapPOI>> _fetchGeneric<T>(
     List<LatLng> boundary,
     String key,
     String value,
+    POIType type,
   ) async {
     if (boundary.isEmpty) return [];
 
@@ -94,6 +95,6 @@ class FeatureFetcher {
     """;
 
     final elements = await _fetchElements(query);
-    return elements.map(MapPOI.fromOverpassElement).toList();
+    return elements.map((element) => MapPOI.fromOverpassElement(type, element)).toList();
   }
 }

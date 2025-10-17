@@ -8,6 +8,7 @@ import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import '../../main.dart';
 import '../models/game_state.dart';
 import '../models/map_features/map_features_controller.dart';
+import '../models/map_features/feature_marker_provider.dart';
 import '../models/play_area/play_area.dart';
 import '../models/play_area/play_area_selector_controller.dart';
 import '../models/shape/shape_factory.dart';
@@ -47,13 +48,35 @@ class _MapScreenState extends State<MapScreen> {
   BitmapDescriptor? _iconForWeb;
 
   final PlayAreaSelectorController _selectorController = PlayAreaSelectorController();
-  final MapFeaturesController _featuresController = MapFeaturesController();
+  late FeatureMarkerProvider _featureMarkerProvider;
+  late MapFeaturesController _featuresController;
+  Set<Marker> _featureMarkers = <Marker>{};
+  Set<Polygon> _featurePolygons = <Polygon>{};
   ShapeController? _activeShapeController;
   bool _isBottomSheetOpen = false;
 
   @override
   void initState() {
     super.initState();
+    _featureMarkerProvider = FeatureMarkerProvider(() => !_isEditable(), _onMapTap);
+    _featureMarkerProvider.addListener(() {
+      var isDifferent = _featureMarkerProvider.allMarkers
+          .difference(_featureMarkers)
+          .isNotEmpty;
+      if (_featureMarkerProvider.allMarkers.isEmpty) {
+        isDifferent = _featureMarkers.isNotEmpty;
+      }
+      if (_featureMarkers.length != _featureMarkerProvider.allMarkers.length) {
+        isDifferent = true;
+      }
+      if (isDifferent) {
+        setState(() {
+          _featureMarkers = _featureMarkerProvider.allMarkers;
+          _featurePolygons = _featureMarkerProvider.polygons;
+        });
+      }
+    });
+    _featuresController = MapFeaturesController(_featureMarkerProvider);
     gameStateLoadedFuture = GameState.loadGameState().then(
       (gS) => {
         if (gS.playArea != null) {_loadGameState(gS)},
@@ -311,7 +334,6 @@ class _MapScreenState extends State<MapScreen> {
             animation: Listenable.merge([
               prefs,
               _selectorController,
-              _featuresController,
               if (_activeShapeController != null) _activeShapeController!,
             ]),
             builder: (_, __) {
@@ -350,10 +372,8 @@ class _MapScreenState extends State<MapScreen> {
                 }
               }
 
-              markersToShow.addAll(
-                _featuresController.getMarkers(tapable: !_isEditable(), onTap: _onMapTap),
-              );
-              polygonsToShow.addAll(_featuresController.getPolygons());
+              markersToShow.addAll(_featureMarkers);
+              polygonsToShow.addAll(_featurePolygons);
 
               if (kIsWeb && _locationForWeb != null && _iconForWeb != null) {
                 markersToShow.add(
@@ -379,6 +399,8 @@ class _MapScreenState extends State<MapScreen> {
                 markers: markersToShow,
                 onMapCreated: _onMapCreated,
                 onTap: _onMapTap,
+                onCameraMove: _featureMarkerProvider.onCameraMove,
+                onCameraIdle: _featureMarkerProvider.onCameraIdle,
                 cloudMapId: 'f16d3398e3253ffb9e2ab473',
               );
             },
@@ -486,6 +508,7 @@ class _MapScreenState extends State<MapScreen> {
 
   void _onMapCreated(GoogleMapController controller) {
     _controller = controller;
+    _featureMarkerProvider.setMapId(controller.mapId);
 
     gameStateLoadedFuture.then(
       (_) => {
