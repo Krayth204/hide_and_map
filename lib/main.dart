@@ -5,6 +5,8 @@ import 'src/screens/map_screen.dart';
 import 'src/util/app_preferences.dart';
 
 AppPreferences prefs = AppPreferences();
+GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +27,7 @@ class HideAndMapApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       home: const MapScreen(),
     );
   }

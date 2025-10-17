@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../../main.dart';
 import 'feature_fetcher.dart';
 import 'feature_marker_provider.dart';
 import 'station.dart';
@@ -363,6 +364,9 @@ class MapFeaturesController extends ChangeNotifier {
       setFetched(true);
     } catch (e) {
       debugPrint('Error fetching POI: $e');
+      rootScaffoldMessengerKey.currentState?.showSnackBar(
+        const SnackBar(content: Text("Fetching locations failed! Please try again!")),
+      );
       onFail();
     } finally {
       setFetching(false);
