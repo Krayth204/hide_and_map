@@ -470,6 +470,7 @@ class _MapScreenState extends State<MapScreen> {
       final gS = GameState.decodeGameState(imported);
       if (gS.playArea != null) {
         _loadGameState(gS);
+        _animateToPlayArea();
       } else {
         ScaffoldMessenger.of(
           context,
@@ -512,14 +513,7 @@ class _MapScreenState extends State<MapScreen> {
 
     gameStateLoadedFuture.then(
       (_) => {
-        if (gameState.playArea != null)
-          {
-            _controller!.animateCamera(
-              CameraUpdate.newCameraPosition(
-                CameraPosition(target: gameState.playArea!.getCenter(), zoom: 8),
-              ),
-            ),
-          },
+        _animateToPlayArea(),
         LocationProvider.requestPermission().then(
           (granted) => {
             if (granted)
@@ -547,6 +541,14 @@ class _MapScreenState extends State<MapScreen> {
         ),
       },
     );
+  }
+
+  void _animateToPlayArea() {
+    if (gameState.playArea != null) {
+      _controller!.animateCamera(
+        CameraUpdate.newLatLngBounds(gameState.playArea!.getLatLngBounds(), 0),
+      );
+    }
   }
 
   void _onLocationChanged(LatLng location) {
