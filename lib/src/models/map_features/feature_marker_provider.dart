@@ -6,6 +6,8 @@ import 'package:google_maps_cluster_manager_2/google_maps_cluster_manager_2.dart
 import 'package:google_maps_flutter/google_maps_flutter.dart'
     hide ClusterManager, Cluster;
 
+import '../../util/geo_math.dart';
+import '../../util/location_provider.dart';
 import 'map_poi.dart';
 import 'station.dart';
 
@@ -191,11 +193,20 @@ class FeatureMarkerProvider extends ChangeNotifier {
   Future<Marker> _buildStationMarker(Station station) async {
     var consumeTaps = tapable();
     final icon = station.type == StationType.train ? _trainIcon : _subwayIcon;
+    String? distance;
+    if (LocationProvider.lastLocation.latitude != 0.0 &&
+        LocationProvider.lastLocation.longitude != 0.0) {
+      distance = GeoMath.toDistanceString(
+        GeoMath.distanceInMeters(LocationProvider.lastLocation, station.location),
+      );
+    }
+    String title = station.name;
+    title += distance != null ? ' ($distance)' : '';
     return Marker(
       markerId: MarkerId('station_${station.id}'),
       position: station.location,
       icon: icon,
-      infoWindow: InfoWindow(title: station.name, snippet: station.nameEn),
+      infoWindow: InfoWindow(title: title, snippet: station.nameEn),
       consumeTapEvents: consumeTaps,
       onTap: () => consumeTaps ? onTap.call(station.location) : null,
     );
@@ -203,11 +214,20 @@ class FeatureMarkerProvider extends ChangeNotifier {
 
   Future<Marker> _buildPoiMarker(MapPOI poi, BitmapDescriptor icon) async {
     var consumeTaps = tapable();
+    String? distance;
+    if (LocationProvider.lastLocation.latitude != 0.0 &&
+        LocationProvider.lastLocation.longitude != 0.0) {
+      distance = GeoMath.toDistanceString(
+        GeoMath.distanceInMeters(LocationProvider.lastLocation, poi.center),
+      );
+    }
+    String title = poi.name;
+    title += distance != null ? ' ($distance)' : '';
     return Marker(
-      markerId: MarkerId('poi_${poi.id}'),
+      markerId: MarkerId('${poi.type.name}_${poi.id}'),
       position: poi.center,
       icon: icon,
-      infoWindow: InfoWindow(title: poi.name, snippet: poi.nameEn),
+      infoWindow: InfoWindow(title: title, snippet: poi.nameEn),
       consumeTapEvents: consumeTaps,
       onTap: () => consumeTaps ? onTap.call(poi.center) : null,
     );
@@ -250,7 +270,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
     if (poi.boundary == null || poi.boundary!.isEmpty) return;
     polygons.add(
       Polygon(
-        polygonId: PolygonId('${poi.type}_${poi.id}'),
+        polygonId: PolygonId('${poi.type.name}_${poi.id}'),
         points: poi.boundary!,
         strokeWidth: 2,
         strokeColor: color,
@@ -265,38 +285,65 @@ class FeatureMarkerProvider extends ChangeNotifier {
 
   void setThemeParks(List<MapPOI> elements) {
     _themeParkClusterManager.setItems(elements);
+    if (elements.isEmpty) {
+      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('themePark'));
+    }
   }
 
   void setZoos(List<MapPOI> elements) {
     _zooClusterManager.setItems(elements);
+    if (elements.isEmpty) {
+      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('zoo'));
+    }
   }
 
   void setAquariums(List<MapPOI> elements) {
     _aquariumClusterManager.setItems(elements);
+    if (elements.isEmpty) {
+      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('aquarium'));
+    }
   }
 
   void setGolfCourses(List<MapPOI> elements) {
     _golfCourseClusterManager.setItems(elements);
+    if (elements.isEmpty) {
+      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('golfCourse'));
+    }
   }
 
   void setMuseums(List<MapPOI> elements) {
     _museumClusterManager.setItems(elements);
+    if (elements.isEmpty) {
+      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('museum'));
+    }
   }
 
   void setMovieTheaters(List<MapPOI> elements) {
     _movieTheaterClusterManager.setItems(elements);
+    if (elements.isEmpty) {
+      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('movieTheater'));
+    }
   }
 
   void setHospitals(List<MapPOI> elements) {
     _hospitalClusterManager.setItems(elements);
+    if (elements.isEmpty) {
+      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('hospital'));
+    }
   }
 
   void setLibraries(List<MapPOI> elements) {
     _libraryClusterManager.setItems(elements);
+    if (elements.isEmpty) {
+      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('library'));
+    }
   }
 
   void setConsulates(List<MapPOI> elements) {
     _consulateClusterManager.setItems(elements);
+    if (elements.isEmpty) {
+      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('consulate'));
+    }
   }
 
   void setMapId(int mapId) {
