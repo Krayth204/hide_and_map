@@ -22,14 +22,40 @@ class PolygonPlayArea extends PlayArea {
   }
 
   @override
+  LatLngBounds getLatLngBounds() {
+    if (vertices.isEmpty) {
+      return LatLngBounds(southwest: LatLng(0, 0), northeast: LatLng(0, 0));
+    }
+
+    double minLat = vertices.first.latitude;
+    double maxLat = vertices.first.latitude;
+    double minLng = vertices.first.longitude;
+    double maxLng = vertices.first.longitude;
+
+    for (final v in vertices) {
+      if (v.latitude < minLat) minLat = v.latitude;
+      if (v.latitude > maxLat) maxLat = v.latitude;
+      if (v.longitude < minLng) minLng = v.longitude;
+      if (v.longitude > maxLng) maxLng = v.longitude;
+    }
+
+    return LatLngBounds(
+      southwest: LatLng(minLat, minLng),
+      northeast: LatLng(maxLat, maxLng),
+    );
+  }
+
+  @override
   Map<String, dynamic> toJson() {
     return {
       't': 'pg',
       'ver': vertices
-          .map((v) => {
-                'lat': double.parse(v.latitude.toStringAsFixed(5)),
-                'lng': double.parse(v.longitude.toStringAsFixed(5)),
-              })
+          .map(
+            (v) => {
+              'lat': double.parse(v.latitude.toStringAsFixed(5)),
+              'lng': double.parse(v.longitude.toStringAsFixed(5)),
+            },
+          )
           .toList(),
     };
   }
