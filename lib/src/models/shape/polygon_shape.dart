@@ -48,6 +48,11 @@ class PolygonShape implements Shape {
   }
 
   @override
+  double getDistance() {
+    return 0;
+  }
+
+  @override
   ShapeObject toShapeObject(
     PlayArea playArea, {
     bool editable = false,

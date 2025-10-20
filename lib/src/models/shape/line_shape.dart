@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../util/color_helper.dart';
+import '../../util/geo_math.dart';
 import '../play_area/play_area.dart';
 import 'shape.dart';
 import 'shape_object.dart';
@@ -19,22 +20,39 @@ class LineShape implements Shape {
   bool inverted = false;
 
   final List<LatLng> points;
+  double distance = 0;
 
-  LineShape(this.id, this.points, {this.color= Colors.blue});
+  LineShape(this.id, this.points, {this.color = Colors.blue}) {
+    _calculateDistance();
+  }
 
   @override
   void addPoint(LatLng p) {
     points.add(p);
+    _calculateDistance();
+  }
+
+  void _calculateDistance() {
+    if (points.isEmpty || points.length == 1) {
+      distance = 0;
+    } else {
+      distance = 0;
+      for (var i = 0; i < points.length - 1; i++) {
+        distance += GeoMath.distanceInMeters(points[i], points[i + 1]);
+      }
+    }
   }
 
   @override
   void undo() {
     if (points.isNotEmpty) points.removeLast();
+    _calculateDistance();
   }
 
   @override
   void reset() {
     points.clear();
+    _calculateDistance();
   }
 
   @override
@@ -45,6 +63,11 @@ class LineShape implements Shape {
   @override
   bool canConfirm() {
     return points.length >= 2;
+  }
+
+  @override
+  double getDistance() {
+    return distance;
   }
 
   @override
@@ -79,6 +102,7 @@ class LineShape implements Shape {
           draggable: true,
           onDragEnd: (p) {
             points[i] = p;
+            _calculateDistance();
             notify();
           },
           icon: ColorHelper.hueFromMaterialColor(color),

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hide_and_map/src/models/shape/circle_shape.dart';
+import 'package:hide_and_map/src/util/geo_math.dart';
 import '../../models/shape/shape.dart';
 import '../../models/shape/shape_controller.dart';
 import '../../util/color_helper.dart';
+import '../radius_picker.dart';
 import 'color_picker_overlay.dart';
 
 class ShapePopup extends StatelessWidget {
@@ -19,21 +20,23 @@ class ShapePopup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String title;
-    String instructions = 'Tap map to add points. Drag markers to move.';
-    bool canConfirm;
-    bool showUndoReset = false;
-    bool showInvertedCheckbox = false;
-    String invertedText = 'Invert (cover outside of shape)';
-
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: AnimatedBuilder(
           animation: controller,
-          builder: (_, __) {
-            var shape = controller.shape;
+          builder: (_, _) {
+            final shape = controller.shape;
+
+            String title;
+            String instructions = 'Tap map to add points. Drag markers to move.';
+            bool canConfirm = shape.canConfirm();
+            bool showUndoReset = false;
+            bool showInvertedCheckbox = false;
+            bool showDistance = false;
+            String invertedText = 'Invert (cover outside of shape)';
+
             switch (shape.type) {
               case ShapeType.circle:
                 title = controller.edit ? 'Edit Circle' : 'Add Circle';
@@ -43,6 +46,7 @@ class ShapePopup extends StatelessWidget {
               case ShapeType.line:
                 title = controller.edit ? 'Edit Line' : 'Add Line';
                 showUndoReset = true;
+                showDistance = true;
                 break;
               case ShapeType.polygon:
                 title = controller.edit ? 'Edit Polygon' : 'Add Polygon';
@@ -53,17 +57,17 @@ class ShapePopup extends StatelessWidget {
                 title = controller.edit ? 'Edit Thermometer' : 'Add Thermometer';
                 showUndoReset = true;
                 showInvertedCheckbox = true;
+                showDistance = true;
                 invertedText = 'Hotter (Hider closer to second point?)';
                 break;
             }
-            canConfirm = shape.canConfirm();
 
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   children: [
-                    SizedBox(width: 24, height: 24),
+                    const SizedBox(width: 24, height: 24),
                     Expanded(
                       child: Text(
                         title,
@@ -80,9 +84,7 @@ class ShapePopup extends StatelessWidget {
                             available: ColorHelper.availableColors,
                           ),
                         );
-                        if (selected != null) {
-                          controller.setColor(selected);
-                        }
+                        if (selected != null) controller.setColor(selected);
                       },
                       child: Container(
                         width: 24,
@@ -99,35 +101,9 @@ class ShapePopup extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(instructions),
                 const SizedBox(height: 8),
-                if (shape is CircleShape)
-                  Row(
-                    children: [
-                      const Text('Radius (m):'),
-                      Expanded(
-                        child: Slider(
-                          value: shape.radius.clamp(500, 50000),
-                          min: 500,
-                          max: 50000,
-                          divisions: 99,
-                          label: shape.radius.round().toString(),
-                          onChanged: (v) => controller.setRadius(v),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 80,
-                        child: TextField(
-                          keyboardType: TextInputType.number,
-                          controller: TextEditingController(
-                            text: shape.radius.round().toString(),
-                          ),
-                          onChanged: (s) {
-                            final v = double.tryParse(s);
-                            if (v != null) controller.setRadius(v);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+
+                if (shape.type == ShapeType.circle) RadiusPicker(controller: controller),
+
                 if (showUndoReset)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -143,6 +119,7 @@ class ShapePopup extends StatelessWidget {
                       ),
                     ],
                   ),
+
                 if (showInvertedCheckbox) ...[
                   const SizedBox(height: 8),
                   Row(
@@ -155,10 +132,24 @@ class ShapePopup extends StatelessWidget {
                     ],
                   ),
                 ],
+
                 const SizedBox(height: 8),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    Expanded(
+                      child: showDistance
+                          ? Center(
+                              child: Text(
+                                GeoMath.toDistanceString(shape.getDistance()),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    const SizedBox(width: 8),
                     TextButton(onPressed: onCancel, child: const Text('Cancel')),
                     const SizedBox(width: 8),
                     ElevatedButton(

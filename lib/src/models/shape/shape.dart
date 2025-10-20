@@ -16,6 +16,7 @@ abstract class Shape {
   void undo();
   void reset();
   bool canConfirm();
+  double getDistance();
 
   ShapeObject toShapeObject(
     PlayArea playArea, {

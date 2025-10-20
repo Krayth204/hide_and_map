@@ -1,15 +1,17 @@
 // Entry point for the Hide and Map application.
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'src/models/map_features/feature_marker_provider.dart';
 import 'src/screens/map_screen.dart';
+import 'src/util/app_preferences.dart';
 
-late String mapStyle;
+AppPreferences prefs = AppPreferences();
+GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Load JSON before app starts
-  mapStyle = await rootBundle.loadString('assets/map_style.json');
+  await prefs.init();
+  await FeatureMarkerProvider.loadMarkerIcons();
 
   runApp(const HideAndMapApp());
 }
@@ -25,6 +27,7 @@ class HideAndMapApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       home: const MapScreen(),
     );
   }

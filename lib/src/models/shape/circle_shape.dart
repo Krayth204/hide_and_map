@@ -50,6 +50,11 @@ class CircleShape implements Shape {
   }
 
   @override
+  double getDistance() {
+    return radius;
+  }
+
+  @override
   ShapeObject toShapeObject(
     PlayArea playArea, {
     bool editable = false,

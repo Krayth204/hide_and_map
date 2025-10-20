@@ -11,6 +11,9 @@ abstract class PlayArea {
 
   /// Returns the center of the play area
   LatLng getCenter();
+  
+  /// Returns the bounds of the play area
+  LatLngBounds getLatLngBounds();
 
   Map<String, dynamic> toJson();
 
