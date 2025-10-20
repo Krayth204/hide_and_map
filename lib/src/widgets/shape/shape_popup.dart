@@ -26,7 +26,7 @@ class ShapePopup extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: AnimatedBuilder(
           animation: controller,
-          builder: (_, __) {
+          builder: (_, _) {
             final shape = controller.shape;
 
             String title;

@@ -23,6 +23,7 @@ import '../widgets/play_area/play_area_selector.dart';
 import '../models/shape/shape_controller.dart';
 import '../models/shape/shape.dart';
 import '../widgets/shape/shape_popup.dart';
+import 'settings_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -52,27 +53,25 @@ class _MapScreenState extends State<MapScreen> {
   late MapFeaturesController _featuresController;
   Set<Marker> _featureMarkers = <Marker>{};
   Set<Polygon> _featurePolygons = <Polygon>{};
+  Set<Circle> _featureCircles = <Circle>{};
   ShapeController? _activeShapeController;
   bool _isBottomSheetOpen = false;
 
   @override
   void initState() {
     super.initState();
-    _featureMarkerProvider = FeatureMarkerProvider(() => !_isEditable(), _onMapTap);
+    _featureMarkerProvider = FeatureMarkerProvider(_onMarkerTap);
     _featureMarkerProvider.addListener(() {
-      var isDifferent = _featureMarkerProvider.allMarkers
-          .difference(_featureMarkers)
-          .isNotEmpty;
-      if (_featureMarkerProvider.allMarkers.isEmpty) {
-        isDifferent = _featureMarkers.isNotEmpty;
-      }
-      if (_featureMarkers.length != _featureMarkerProvider.allMarkers.length) {
+      var isDifferent = !_featureMarkers.containsAll(_featureMarkerProvider.allMarkers);
+      if (_featureMarkerProvider.dataChanged) {
         isDifferent = true;
+        _featureMarkerProvider.dataChanged = false;
       }
       if (isDifferent) {
         setState(() {
           _featureMarkers = _featureMarkerProvider.allMarkers;
-          _featurePolygons = _featureMarkerProvider.polygons;
+          _featurePolygons = _featureMarkerProvider.getPolygons;
+          _featureCircles = _featureMarkerProvider.getCircles;
         });
       }
     });
@@ -142,6 +141,19 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
+  MarkerId _lastpressed = MarkerId('noMarker');
+  void _onMarkerTap(LatLng position, MarkerId markerId) async {
+    if (_controller == null) return;
+    if (markerId == _lastpressed) {
+      _controller!.hideMarkerInfoWindow(markerId);
+      _lastpressed = MarkerId('noMarker');
+    } else {
+      _controller!.showMarkerInfoWindow(markerId);
+      _lastpressed = markerId;
+    }
+    _onMapTap(position);
+  }
+
   void _onMapTap(LatLng point) {
     if (gameState.playArea == null) {
       _selectorController.onMapTap(point);
@@ -178,6 +190,7 @@ class _MapScreenState extends State<MapScreen> {
                     setState(() {
                       gameState.shapes.removeWhere((s) => s.id == id);
                     });
+                    GameState.saveGameState(gameState);
                     Navigator.pop(context);
                   },
                 ),
@@ -219,8 +232,14 @@ class _MapScreenState extends State<MapScreen> {
           ),
           PointerInterceptor(
             child: PopupMenuButton<String>(
-              onSelected: (value) {
+              onSelected: (value) async {
                 switch (value) {
+                  case 'settings':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    );
+                    break;
                   case 'import':
                     showDialog<String>(
                       context: context,
@@ -241,6 +260,18 @@ class _MapScreenState extends State<MapScreen> {
               },
               iconSize: 35,
               itemBuilder: (BuildContext context) => [
+                PopupMenuItem(
+                  value: 'settings',
+                  child: PointerInterceptor(
+                    child: Row(
+                      children: const [
+                        Icon(Icons.settings, color: Colors.black54),
+                        SizedBox(width: 8),
+                        Text("Settings"),
+                      ],
+                    ),
+                  ),
+                ),
                 PopupMenuItem(
                   value: 'import',
                   child: PointerInterceptor(
@@ -299,6 +330,7 @@ class _MapScreenState extends State<MapScreen> {
               children: [
                 PointerInterceptor(
                   child: FloatingActionButton(
+                    heroTag: 'fab_add_circle',
                     onPressed: () => _openAddShape(ShapeType.circle),
                     tooltip: 'Add Circle',
                     child: const Icon(Icons.circle_outlined),
@@ -306,6 +338,7 @@ class _MapScreenState extends State<MapScreen> {
                 ),
                 PointerInterceptor(
                   child: FloatingActionButton(
+                    heroTag: 'fab_add_thermometer',
                     onPressed: () => _openAddShape(ShapeType.thermometer),
                     tooltip: 'Add Thermometer',
                     child: const Icon(Icons.thermostat),
@@ -313,6 +346,7 @@ class _MapScreenState extends State<MapScreen> {
                 ),
                 PointerInterceptor(
                   child: FloatingActionButton(
+                    heroTag: 'fab_add_line',
                     onPressed: () => _openAddShape(ShapeType.line),
                     tooltip: 'Add Line',
                     child: const Icon(Icons.show_chart),
@@ -320,6 +354,7 @@ class _MapScreenState extends State<MapScreen> {
                 ),
                 PointerInterceptor(
                   child: FloatingActionButton(
+                    heroTag: 'fab_add_polygon',
                     onPressed: () => _openAddShape(ShapeType.polygon),
                     tooltip: 'Add Polygon',
                     child: const Icon(Icons.change_history),
@@ -336,7 +371,7 @@ class _MapScreenState extends State<MapScreen> {
               _selectorController,
               if (_activeShapeController != null) _activeShapeController!,
             ]),
-            builder: (_, __) {
+            builder: (_, _) {
               final polygonsToShow = <Polygon>{};
               polygonsToShow.addAll(_polygons); // confirmed playArea overlay
               final polylinesToShow = <Polyline>{};
@@ -374,6 +409,7 @@ class _MapScreenState extends State<MapScreen> {
 
               markersToShow.addAll(_featureMarkers);
               polygonsToShow.addAll(_featurePolygons);
+              circlesToShow.addAll(_featureCircles);
 
               if (kIsWeb && _locationForWeb != null && _iconForWeb != null) {
                 markersToShow.add(

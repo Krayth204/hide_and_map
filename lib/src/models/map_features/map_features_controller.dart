@@ -62,6 +62,7 @@ class MapFeaturesController extends ChangeNotifier {
   bool get showRailwayStations => _showRailwayStations;
   bool get showTrainStations => _showTrainStations;
   bool get showSubwayStations => _showSubwayStations;
+  bool get showHidingZones => _featureMarkerProvider.hidingZonesVisible;
   bool get showThemeParks => _showThemeParks;
   bool get showZoos => _showZoos;
   bool get showAquariums => _showAquariums;
@@ -135,6 +136,11 @@ class MapFeaturesController extends ChangeNotifier {
     } else {
       _featureMarkerProvider.setStations(<Station>[]);
     }
+  }
+
+  void toggleHidingZones(bool value) async {
+    _featureMarkerProvider.setHidingZonesVisible(value);
+    notifyListeners();
   }
 
   void toggleThemeParks(bool value) async {
@@ -246,6 +252,11 @@ class MapFeaturesController extends ChangeNotifier {
       _stationsFetched = true;
     } catch (e) {
       debugPrint('Error fetching stations: $e');
+      rootScaffoldMessengerKey.currentState?.showSnackBar(
+        const SnackBar(
+          content: Text("Fetching station locations failed! Please try again!"),
+        ),
+      );
       _showRailwayStations = false;
       _showTrainStations = false;
       _showSubwayStations = false;

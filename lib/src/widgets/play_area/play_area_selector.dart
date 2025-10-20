@@ -20,7 +20,7 @@ class PlayAreaSelector extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: AnimatedBuilder(
           animation: controller,
-          builder: (_, __) {
+          builder: (_, _) {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [

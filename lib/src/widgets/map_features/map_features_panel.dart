@@ -181,6 +181,14 @@ class MapFeaturesPanel extends StatelessWidget {
               onChanged: controller.toggleSubwayStations,
               secondary: const Icon(Icons.subway_outlined, color: Colors.purple),
             ),
+
+            if (controller.showRailwayStations || controller.railwayPartial)
+              SwitchListTile(
+                title: const Text('Hiding Zones'),
+                value: controller.showHidingZones,
+                onChanged: controller.toggleHidingZones,
+                secondary: const Icon(Icons.visibility, color: Colors.teal),
+              ),
           ],
         ),
       ),
@@ -207,13 +215,13 @@ class MapFeaturesPanel extends StatelessWidget {
         onTap: () => onChanged(!value),
         trailing: isLoading
             ? Padding(
-              padding: EdgeInsets.only(right: 14.0),
-              child: const SizedBox(
-                height: 32,
-                width: 32,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            )
+                padding: EdgeInsets.only(right: 14.0),
+                child: const SizedBox(
+                  height: 32,
+                  width: 32,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
             : Switch(value: value, onChanged: onChanged, activeTrackColor: color),
       ),
     );

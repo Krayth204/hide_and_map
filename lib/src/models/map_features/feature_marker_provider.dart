@@ -6,15 +6,22 @@ import 'package:google_maps_cluster_manager_2/google_maps_cluster_manager_2.dart
 import 'package:google_maps_flutter/google_maps_flutter.dart'
     hide ClusterManager, Cluster;
 
+import '../../../main.dart';
 import '../../util/geo_math.dart';
 import '../../util/location_provider.dart';
 import 'map_poi.dart';
 import 'station.dart';
 
 class FeatureMarkerProvider extends ChangeNotifier {
-  final bool Function() tapable;
-  final Function(LatLng point) onTap;
-  Set<Polygon> polygons = {};
+  final void Function(LatLng point, MarkerId markerId) _onMarkerTap;
+  final Set<Polygon> _polygons = {};
+  final Set<Circle> _circles = {};
+  Set<Polygon> get getPolygons => {..._polygons};
+  Set<Circle> get getCircles => {..._circles};
+  bool _hidingZonesVisible = false;
+  double _hidingZoneSize = prefs.hidingZoneSize;
+
+  bool dataChanged = false;
 
   late ClusterManager<Station> _stationClusterManager;
   late ClusterManager<MapPOI> _themeParkClusterManager;
@@ -38,7 +45,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
   Set<Marker> _libraryMarkers = {};
   Set<Marker> _consulateMarkers = {};
 
-  FeatureMarkerProvider(this.tapable, this.onTap) {
+  FeatureMarkerProvider(this._onMarkerTap) {
     init();
   }
 
@@ -132,6 +139,13 @@ class FeatureMarkerProvider extends ChangeNotifier {
       },
       markerBuilder: _getPOIMarkerBuilder(_consulateIcon, const Color(0xFF0097A7)),
     );
+
+    prefs.addListener(() {
+      if (prefs.hidingZoneSize != _hidingZoneSize) {
+        _hidingZoneSize = prefs.hidingZoneSize;
+        setHidingZonesVisible(_hidingZonesVisible);
+      };
+    });
   }
 
   ClusterManager<T> _createClusterManager<T extends ClusterItem>({
@@ -152,11 +166,12 @@ class FeatureMarkerProvider extends ChangeNotifier {
   Future<Marker> Function(Cluster<Station>) _getStationMarkerBuilder() =>
       (cluster) async {
         if (!cluster.isMultiple) {
+          _addCircle(cluster.items.first);
           return _buildStationMarker(cluster.items.first);
         } else {
-          var consumeTaps = tapable();
+          final markerId = MarkerId(cluster.getId());
           return Marker(
-            markerId: MarkerId(cluster.getId()),
+            markerId: markerId,
             anchor: Offset(0.5, 0.5),
             position: cluster.location,
             icon: await _getMarkerBitmap(
@@ -164,8 +179,8 @@ class FeatureMarkerProvider extends ChangeNotifier {
               Colors.deepPurple,
               text: cluster.count.toString(),
             ),
-            consumeTapEvents: consumeTaps,
-            onTap: () => consumeTaps ? onTap.call(cluster.location) : null,
+            consumeTapEvents: true,
+            onTap: () => _onMarkerTap.call(cluster.location, markerId),
           );
         }
       };
@@ -178,20 +193,19 @@ class FeatureMarkerProvider extends ChangeNotifier {
       _addPolygon(cluster.items.first, color);
       return _buildPoiMarker(cluster.items.first, icon);
     } else {
-      var consumeTaps = tapable();
+      final markerId = MarkerId(cluster.getId());
       return Marker(
         markerId: MarkerId(cluster.getId()),
         anchor: Offset(0.5, 0.5),
         position: cluster.location,
         icon: await _getMarkerBitmap(60, color, text: cluster.count.toString()),
-        consumeTapEvents: consumeTaps,
-        onTap: () => consumeTaps ? onTap.call(cluster.location) : null,
+        consumeTapEvents: true,
+        onTap: () => _onMarkerTap.call(cluster.location, markerId),
       );
     }
   };
 
   Future<Marker> _buildStationMarker(Station station) async {
-    var consumeTaps = tapable();
     final icon = station.type == StationType.train ? _trainIcon : _subwayIcon;
     String? distance;
     if (LocationProvider.lastLocation.latitude != 0.0 &&
@@ -202,18 +216,18 @@ class FeatureMarkerProvider extends ChangeNotifier {
     }
     String title = station.name;
     title += distance != null ? ' ($distance)' : '';
+    final markerId = MarkerId('station_${station.id}');
     return Marker(
-      markerId: MarkerId('station_${station.id}'),
+      markerId: markerId,
       position: station.location,
       icon: icon,
       infoWindow: InfoWindow(title: title, snippet: station.nameEn),
-      consumeTapEvents: consumeTaps,
-      onTap: () => consumeTaps ? onTap.call(station.location) : null,
+      consumeTapEvents: true,
+      onTap: () => _onMarkerTap.call(station.location, markerId),
     );
   }
 
   Future<Marker> _buildPoiMarker(MapPOI poi, BitmapDescriptor icon) async {
-    var consumeTaps = tapable();
     String? distance;
     if (LocationProvider.lastLocation.latitude != 0.0 &&
         LocationProvider.lastLocation.longitude != 0.0) {
@@ -223,13 +237,14 @@ class FeatureMarkerProvider extends ChangeNotifier {
     }
     String title = poi.name;
     title += distance != null ? ' ($distance)' : '';
+    final markerId = MarkerId('${poi.type.name}_${poi.id}');
     return Marker(
-      markerId: MarkerId('${poi.type.name}_${poi.id}'),
+      markerId: markerId,
       position: poi.center,
       icon: icon,
       infoWindow: InfoWindow(title: title, snippet: poi.nameEn),
-      consumeTapEvents: consumeTaps,
-      onTap: () => consumeTaps ? onTap.call(poi.center) : null,
+      consumeTapEvents: true,
+      onTap: () => _onMarkerTap.call(poi.center, markerId),
     );
   }
 
@@ -266,9 +281,28 @@ class FeatureMarkerProvider extends ChangeNotifier {
     return BitmapDescriptor.bytes(data.buffer.asUint8List());
   }
 
+  void _addCircle(Station station) {
+    if (!_hidingZonesVisible) return;
+    if (_circles.any(
+      (cirlce) => GeoMath.distanceInMeters(cirlce.center, station.location) < 316,
+    )) {
+      return;
+    }
+    _circles.add(
+      Circle(
+        circleId: CircleId('zone_${station.id}'),
+        center: station.location,
+        radius: _hidingZoneSize,
+        fillColor: Colors.teal.withAlpha(20),
+        strokeColor: Colors.teal.withAlpha(100),
+        strokeWidth: 2,
+      ),
+    );
+  }
+
   void _addPolygon(MapPOI poi, Color color) {
     if (poi.boundary == null || poi.boundary!.isEmpty) return;
-    polygons.add(
+    _polygons.add(
       Polygon(
         polygonId: PolygonId('${poi.type.name}_${poi.id}'),
         points: poi.boundary!,
@@ -280,69 +314,89 @@ class FeatureMarkerProvider extends ChangeNotifier {
   }
 
   void setStations(List<Station> stations) {
+    dataChanged = true;
+    _circles.clear();
     _stationClusterManager.setItems(stations);
   }
 
+  bool get hidingZonesVisible => _hidingZonesVisible;
+
+  void setHidingZonesVisible(bool value) {
+    _hidingZonesVisible = value;
+    dataChanged = true;
+    _circles.clear();
+    _stationClusterManager.updateMap();
+  }
+
   void setThemeParks(List<MapPOI> elements) {
+    dataChanged = true;
     _themeParkClusterManager.setItems(elements);
     if (elements.isEmpty) {
-      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('themePark'));
+      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('themePark'));
     }
   }
 
   void setZoos(List<MapPOI> elements) {
+    dataChanged = true;
     _zooClusterManager.setItems(elements);
     if (elements.isEmpty) {
-      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('zoo'));
+      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('zoo'));
     }
   }
 
   void setAquariums(List<MapPOI> elements) {
+    dataChanged = true;
     _aquariumClusterManager.setItems(elements);
     if (elements.isEmpty) {
-      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('aquarium'));
+      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('aquarium'));
     }
   }
 
   void setGolfCourses(List<MapPOI> elements) {
+    dataChanged = true;
     _golfCourseClusterManager.setItems(elements);
     if (elements.isEmpty) {
-      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('golfCourse'));
+      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('golfCourse'));
     }
   }
 
   void setMuseums(List<MapPOI> elements) {
+    dataChanged = true;
     _museumClusterManager.setItems(elements);
     if (elements.isEmpty) {
-      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('museum'));
+      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('museum'));
     }
   }
 
   void setMovieTheaters(List<MapPOI> elements) {
+    dataChanged = true;
     _movieTheaterClusterManager.setItems(elements);
     if (elements.isEmpty) {
-      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('movieTheater'));
+      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('movieTheater'));
     }
   }
 
   void setHospitals(List<MapPOI> elements) {
+    dataChanged = true;
     _hospitalClusterManager.setItems(elements);
     if (elements.isEmpty) {
-      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('hospital'));
+      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('hospital'));
     }
   }
 
   void setLibraries(List<MapPOI> elements) {
+    dataChanged = true;
     _libraryClusterManager.setItems(elements);
     if (elements.isEmpty) {
-      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('library'));
+      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('library'));
     }
   }
 
   void setConsulates(List<MapPOI> elements) {
+    dataChanged = true;
     _consulateClusterManager.setItems(elements);
     if (elements.isEmpty) {
-      polygons.removeWhere((poly) => poly.mapsId.value.startsWith('consulate'));
+      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('consulate'));
     }
   }
 
@@ -361,7 +415,8 @@ class FeatureMarkerProvider extends ChangeNotifier {
   }
 
   void onCameraIdle() {
-    polygons.clear();
+    _polygons.clear();
+    _circles.clear();
     for (final manager in _allManagers) {
       if (manager.items.isNotEmpty) {
         manager.updateMap();
@@ -396,7 +451,8 @@ class FeatureMarkerProvider extends ChangeNotifier {
   ];
 
   void resetAll() {
-    polygons.clear();
+    _polygons.clear();
+    _circles.clear();
     for (var manager in _allManagers) {
       if (manager == _stationClusterManager) {
         manager.setItems(<Station>[]);
