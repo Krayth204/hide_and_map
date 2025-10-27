@@ -144,7 +144,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
       if (prefs.hidingZoneSize != _hidingZoneSize) {
         _hidingZoneSize = prefs.hidingZoneSize;
         setHidingZonesVisible(_hidingZonesVisible);
-      };
+      }
     });
   }
 

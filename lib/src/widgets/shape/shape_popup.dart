@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hide_and_map/src/util/app_preferences.dart';
 import 'package:hide_and_map/src/util/geo_math.dart';
 import '../../models/shape/shape.dart';
 import '../../models/shape/shape_controller.dart';
@@ -102,7 +103,14 @@ class ShapePopup extends StatelessWidget {
                 Text(instructions),
                 const SizedBox(height: 8),
 
-                if (shape.type == ShapeType.circle) RadiusPicker(controller: controller),
+                if (shape.type == ShapeType.circle)
+                  RadiusPicker(
+                    controller: controller,
+                    sliderValues: AppPreferences().lengthSystem == LengthSystem.metric
+                        ? metricRadiusValues
+                        : imperialRadiusValues,
+                    lengthSystem: AppPreferences().lengthSystem,
+                  ),
 
                 if (showUndoReset)
                   Row(
@@ -166,3 +174,6 @@ class ShapePopup extends StatelessWidget {
     );
   }
 }
+
+final List<double> metricRadiusValues = [500, 1000, 2000, 5000, 10000, 15000, 40000, 80000, 160000];
+final List<double> imperialRadiusValues = [ 0.25, 0.5, 1, 3, 5, 10, 25, 50, 100];

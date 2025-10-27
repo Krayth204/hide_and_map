@@ -4,8 +4,22 @@ import 'dart:ui';
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import 'app_preferences.dart';
+
 abstract class GeoMath {
   static const double _earthRadius = 6371000;
+
+  /// Converts feet to meters
+  static double feetToMeters(double feet) => feet * 0.3048;
+
+  /// Converts miles to meters
+  static double milesToMeters(double miles) => miles * 1609.34;
+
+  /// Converts meters to feet
+  static double metersToFeet(double meters) => meters / 0.3048;
+
+  /// Converts meters to miles
+  static double metersToMiles(double meters) => meters / 1609.34;
 
   /// Returns distance between [a] and [b] in metres
   static double distanceInMeters(LatLng a, LatLng b) {
@@ -26,13 +40,27 @@ abstract class GeoMath {
   static double _degToRad(double deg) => deg * pi / 180.0;
 
   static String toDistanceString(double d) {
-    if (d < 1000) {
-      return '${d.round()}m';
-    }
-    if (d < 10000) {
-      return '${(d / 1000).toStringAsFixed(1)}km';
+    final prefs = AppPreferences();
+
+    if (prefs.lengthSystem == LengthSystem.imperial) {
+      final miles = metersToMiles(d);
+      final feet = metersToFeet(d);
+
+      if (miles < 0.1) {
+        return '${feet.round()} ft';
+      } else if (miles < 10) {
+        return '${miles.toStringAsFixed(1)} mi';
+      } else {
+        return '${miles.round()} mi';
+      }
     } else {
-      return '${(d / 1000).round()}km';
+      if (d < 1000) {
+        return '${d.round()} m';
+      } else if (d < 10000) {
+        return '${(d / 1000).toStringAsFixed(1)} km';
+      } else {
+        return '${(d / 1000).round()} km';
+      }
     }
   }
 
