@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/play_area/play_area_selector_controller.dart';
+import '../../util/app_preferences.dart';
 import '../radius_picker.dart';
 
 class PlayAreaSelector extends StatelessWidget {
@@ -52,7 +53,13 @@ class PlayAreaSelector extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 if (controller.mode == SelectionMode.circle)
-                  RadiusPicker(controller: controller, min: 1000, max: 100000),
+                  RadiusPicker(
+                    controller: controller,
+                    sliderValues: AppPreferences().lengthSystem == LengthSystem.metric
+                        ? metricRadiusValues
+                        : imperialRadiusValues,
+                    lengthSystem: AppPreferences().lengthSystem,
+                  ),
                 if (controller.mode == SelectionMode.polygon)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -89,3 +96,6 @@ class PlayAreaSelector extends StatelessWidget {
     );
   }
 }
+
+final List<double> metricRadiusValues = List.generate(100, (index) => (index + 1)*2000);
+final List<double> imperialRadiusValues = List.generate(100, (index) => index + 1);
