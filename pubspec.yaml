@@ -76,6 +76,9 @@ flutter:
     - assets/map_style.json
     - assets/markers/blue_marker.png
     - assets/markers/train_station_marker.png
+    - assets/markers/train_stop_marker.png
+    - assets/markers/tram_stop_marker.png
+    - assets/markers/bus_stop_marker.png
     - assets/markers/subway_station_marker.png
     - assets/markers/theme_park_marker.png
     - assets/markers/zoo_marker.png

@@ -206,7 +206,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
   };
 
   Future<Marker> _buildStationMarker(Station station) async {
-    final icon = station.type == StationType.train ? _trainIcon : _subwayIcon;
+    final icon = _getStationMarker(station.type);
     String? distance;
     if (LocationProvider.lastLocation.latitude != 0.0 &&
         LocationProvider.lastLocation.longitude != 0.0) {
@@ -225,6 +225,21 @@ class FeatureMarkerProvider extends ChangeNotifier {
       consumeTapEvents: true,
       onTap: () => _onMarkerTap.call(station.location, markerId),
     );
+  }
+
+  BitmapDescriptor _getStationMarker(StationType type) {
+    switch (type) {
+      case StationType.trainStation:
+        return _trainStationIcon;
+      case StationType.trainStop:
+        return _trainStopIcon;
+      case StationType.subway:
+        return _subwayIcon;
+      case StationType.tram:
+        return _tramIcon;
+      case StationType.bus:
+        return _busIcon;
+    }
   }
 
   Future<Marker> _buildPoiMarker(MapPOI poi, BitmapDescriptor icon) async {
@@ -460,10 +475,14 @@ class FeatureMarkerProvider extends ChangeNotifier {
         manager.setItems(<MapPOI>[]);
       }
     }
+    dataChanged = true;
   }
 
-  static late BitmapDescriptor _trainIcon;
+  static late BitmapDescriptor _trainStationIcon;
+  static late BitmapDescriptor _trainStopIcon;
   static late BitmapDescriptor _subwayIcon;
+  static late BitmapDescriptor _tramIcon;
+  static late BitmapDescriptor _busIcon;
   static late BitmapDescriptor _themeParkIcon;
   static late BitmapDescriptor _zooIcon;
   static late BitmapDescriptor _aquariumIcon;
@@ -475,13 +494,25 @@ class FeatureMarkerProvider extends ChangeNotifier {
   static late BitmapDescriptor _consulateIcon;
 
   static Future<void> loadMarkerIcons() async {
-    _trainIcon = await BitmapDescriptor.asset(
+    _trainStationIcon = await BitmapDescriptor.asset(
       const ImageConfiguration(size: Size(16, 16)),
       'assets/markers/train_station_marker.png',
+    );
+    _trainStopIcon = await BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(16, 16)),
+      'assets/markers/train_stop_marker.png',
     );
     _subwayIcon = await BitmapDescriptor.asset(
       const ImageConfiguration(size: Size(16, 16)),
       'assets/markers/subway_station_marker.png',
+    );
+    _tramIcon = await BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(16, 16)),
+      'assets/markers/tram_stop_marker.png',
+    );
+    _busIcon = await BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(16, 16)),
+      'assets/markers/bus_stop_marker.png',
     );
     _themeParkIcon = await BitmapDescriptor.asset(
       const ImageConfiguration(size: Size(16, 16)),
