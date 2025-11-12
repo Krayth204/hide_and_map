@@ -118,15 +118,22 @@ class FeatureFetcher {
   }
 
   static Future<List<MapPOI>> fetchConsulates(List<LatLng> boundary) async {
-    return _fetchGeneric(boundary, 'diplomatic', 'consulate', POIType.consulate);
+    return _fetchGeneric(
+      boundary,
+      'diplomatic',
+      'consulate',
+      POIType.consulate,
+      additional: '["consulate"!="honorary_consul"]["consulate"!="honorary_consulate"]',
+    );
   }
 
   static Future<List<MapPOI>> _fetchGeneric<T>(
     List<LatLng> boundary,
     String key,
     String value,
-    POIType type,
-  ) async {
+    POIType type, {
+    String additional = "",
+  }) async {
     if (boundary.isEmpty) return [];
 
     final polygonQuery = _polygonQuery(boundary);
@@ -134,7 +141,7 @@ class FeatureFetcher {
         """
       [out:json][timeout:300];
       (
-        nwr["$key"="$value"](poly:"$polygonQuery");
+        nwr["$key"="$value"]$additional(poly:"$polygonQuery");
       );
       out geom;
     """;
