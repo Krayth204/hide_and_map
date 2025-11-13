@@ -65,7 +65,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
         _themeParkMarkers = markers;
         notifyListeners();
       },
-      markerBuilder: _getPOIMarkerBuilder(_themeParkIcon, const Color(0xFFFF6F00)),
+      markerBuilder: _getPOIMarkerBuilder(const Color(0xFFFF6F00)),
     );
 
     _zooClusterManager = _createClusterManager<MapPOI>(
@@ -74,7 +74,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
         _zooMarkers = markers;
         notifyListeners();
       },
-      markerBuilder: _getPOIMarkerBuilder(_zooIcon, const Color(0xFF43A047)),
+      markerBuilder: _getPOIMarkerBuilder(const Color(0xFF43A047)),
     );
 
     _aquariumClusterManager = _createClusterManager<MapPOI>(
@@ -83,7 +83,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
         _aquariumMarkers = markers;
         notifyListeners();
       },
-      markerBuilder: _getPOIMarkerBuilder(_aquariumIcon, const Color(0xFF3949AB)),
+      markerBuilder: _getPOIMarkerBuilder(const Color(0xFF3949AB)),
     );
 
     _golfCourseClusterManager = _createClusterManager<MapPOI>(
@@ -92,7 +92,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
         _golfCourseMarkers = markers;
         notifyListeners();
       },
-      markerBuilder: _getPOIMarkerBuilder(_golfIcon, const Color(0xFF7CB342)),
+      markerBuilder: _getPOIMarkerBuilder(const Color(0xFF7CB342)),
     );
 
     _museumClusterManager = _createClusterManager<MapPOI>(
@@ -101,7 +101,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
         _museumMarkers = markers;
         notifyListeners();
       },
-      markerBuilder: _getPOIMarkerBuilder(_museumIcon, const Color(0xFF8E24AA)),
+      markerBuilder: _getPOIMarkerBuilder(const Color(0xFF8E24AA)),
     );
 
     _movieTheaterClusterManager = _createClusterManager<MapPOI>(
@@ -110,7 +110,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
         _movieTheaterMarkers = markers;
         notifyListeners();
       },
-      markerBuilder: _getPOIMarkerBuilder(_cinemaIcon, const Color(0xFFD81B60)),
+      markerBuilder: _getPOIMarkerBuilder(const Color(0xFFD81B60)),
     );
 
     _hospitalClusterManager = _createClusterManager<MapPOI>(
@@ -119,7 +119,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
         _hospitalMarkers = markers;
         notifyListeners();
       },
-      markerBuilder: _getPOIMarkerBuilder(_hospitalIcon, const Color(0xFFC62828)),
+      markerBuilder: _getPOIMarkerBuilder(const Color(0xFFC62828)),
     );
 
     _libraryClusterManager = _createClusterManager<MapPOI>(
@@ -128,7 +128,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
         _libraryMarkers = markers;
         notifyListeners();
       },
-      markerBuilder: _getPOIMarkerBuilder(_libraryIcon, const Color(0xFFFBC02D)),
+      markerBuilder: _getPOIMarkerBuilder(const Color(0xFFFBC02D)),
     );
 
     _consulateClusterManager = _createClusterManager<MapPOI>(
@@ -137,7 +137,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
         _consulateMarkers = markers;
         notifyListeners();
       },
-      markerBuilder: _getPOIMarkerBuilder(_consulateIcon, const Color(0xFF0097A7)),
+      markerBuilder: _getPOIMarkerBuilder(const Color(0xFF0097A7)),
     );
 
     prefs.addListener(() {
@@ -185,28 +185,26 @@ class FeatureMarkerProvider extends ChangeNotifier {
         }
       };
 
-  Future<Marker> Function(Cluster<MapPOI>) _getPOIMarkerBuilder(
-    BitmapDescriptor icon,
-    Color color,
-  ) => (cluster) async {
-    if (!cluster.isMultiple) {
-      _addPolygon(cluster.items.first, color);
-      return _buildPoiMarker(cluster.items.first, icon);
-    } else {
-      final markerId = MarkerId(cluster.getId());
-      return Marker(
-        markerId: MarkerId(cluster.getId()),
-        anchor: Offset(0.5, 0.5),
-        position: cluster.location,
-        icon: await _getMarkerBitmap(60, color, text: cluster.count.toString()),
-        consumeTapEvents: true,
-        onTap: () => _onMarkerTap.call(cluster.location, markerId),
-      );
-    }
-  };
+  Future<Marker> Function(Cluster<MapPOI>) _getPOIMarkerBuilder(Color color) =>
+      (cluster) async {
+        if (!cluster.isMultiple) {
+          _addPolygon(cluster.items.first, color);
+          return _buildPoiMarker(cluster.items.first);
+        } else {
+          final markerId = MarkerId(cluster.getId());
+          return Marker(
+            markerId: MarkerId(cluster.getId()),
+            anchor: Offset(0.5, 0.5),
+            position: cluster.location,
+            icon: await _getMarkerBitmap(60, color, text: cluster.count.toString()),
+            consumeTapEvents: true,
+            onTap: () => _onMarkerTap.call(cluster.location, markerId),
+          );
+        }
+      };
 
   Future<Marker> _buildStationMarker(Station station) async {
-    final icon = station.type == StationType.train ? _trainIcon : _subwayIcon;
+    final icon = _getStationMarker(station.type);
     String? distance;
     if (LocationProvider.lastLocation.latitude != 0.0 &&
         LocationProvider.lastLocation.longitude != 0.0) {
@@ -227,7 +225,23 @@ class FeatureMarkerProvider extends ChangeNotifier {
     );
   }
 
-  Future<Marker> _buildPoiMarker(MapPOI poi, BitmapDescriptor icon) async {
+  BitmapDescriptor _getStationMarker(StationType type) {
+    switch (type) {
+      case StationType.trainStation:
+        return icons.trainStationIcon;
+      case StationType.trainStop:
+        return icons.trainStopIcon;
+      case StationType.subway:
+        return icons.subwayIcon;
+      case StationType.tram:
+        return icons.tramIcon;
+      case StationType.bus:
+        return icons.busIcon;
+    }
+  }
+
+  Future<Marker> _buildPoiMarker(MapPOI poi) async {
+    final icon = _getPoiMarker(poi.type);
     String? distance;
     if (LocationProvider.lastLocation.latitude != 0.0 &&
         LocationProvider.lastLocation.longitude != 0.0) {
@@ -246,6 +260,29 @@ class FeatureMarkerProvider extends ChangeNotifier {
       consumeTapEvents: true,
       onTap: () => _onMarkerTap.call(poi.center, markerId),
     );
+  }
+
+  BitmapDescriptor _getPoiMarker(POIType type) {
+    switch (type) {
+      case POIType.themePark:
+        return icons.themeParkIcon;
+      case POIType.zoo:
+        return icons.zooIcon;
+      case POIType.aquarium:
+        return icons.aquariumIcon;
+      case POIType.golfCourse:
+        return icons.golfIcon;
+      case POIType.museum:
+        return icons.museumIcon;
+      case POIType.movieTheater:
+        return icons.cinemaIcon;
+      case POIType.hospital:
+        return icons.hospitalIcon;
+      case POIType.library:
+        return icons.libraryIcon;
+      case POIType.consulate:
+        return icons.consulateIcon;
+    }
   }
 
   Future<BitmapDescriptor> _getMarkerBitmap(int size, Color color, {String? text}) async {
@@ -460,64 +497,6 @@ class FeatureMarkerProvider extends ChangeNotifier {
         manager.setItems(<MapPOI>[]);
       }
     }
-  }
-
-  static late BitmapDescriptor _trainIcon;
-  static late BitmapDescriptor _subwayIcon;
-  static late BitmapDescriptor _themeParkIcon;
-  static late BitmapDescriptor _zooIcon;
-  static late BitmapDescriptor _aquariumIcon;
-  static late BitmapDescriptor _golfIcon;
-  static late BitmapDescriptor _museumIcon;
-  static late BitmapDescriptor _cinemaIcon;
-  static late BitmapDescriptor _hospitalIcon;
-  static late BitmapDescriptor _libraryIcon;
-  static late BitmapDescriptor _consulateIcon;
-
-  static Future<void> loadMarkerIcons() async {
-    _trainIcon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(16, 16)),
-      'assets/markers/train_station_marker.png',
-    );
-    _subwayIcon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(16, 16)),
-      'assets/markers/subway_station_marker.png',
-    );
-    _themeParkIcon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(16, 16)),
-      'assets/markers/theme_park_marker.png',
-    );
-    _zooIcon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(16, 16)),
-      'assets/markers/zoo_marker.png',
-    );
-    _aquariumIcon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(16, 16)),
-      'assets/markers/aquarium_marker.png',
-    );
-    _golfIcon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(16, 16)),
-      'assets/markers/golf_marker.png',
-    );
-    _museumIcon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(16, 16)),
-      'assets/markers/museum_marker.png',
-    );
-    _cinemaIcon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(16, 16)),
-      'assets/markers/cinema_marker.png',
-    );
-    _hospitalIcon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(16, 16)),
-      'assets/markers/hospital_marker.png',
-    );
-    _libraryIcon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(16, 16)),
-      'assets/markers/library_marker.png',
-    );
-    _consulateIcon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(16, 16)),
-      'assets/markers/consulate_marker.png',
-    );
+    dataChanged = true;
   }
 }

@@ -130,8 +130,8 @@ class ThermometerShape implements Shape {
       polyline: Polyline(
         polylineId: PolylineId(customId ?? id),
         points: points,
-        color: color,
-        width: 4,
+        color: color.withAlpha(115),
+        width: 3,
         startCap: Cap.roundCap,
         endCap: Cap.roundCap,
         consumeTapEvents: editable,

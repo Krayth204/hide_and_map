@@ -1,7 +1,7 @@
 import 'package:google_maps_cluster_manager_2/google_maps_cluster_manager_2.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-enum StationType { train, subway }
+enum StationType { trainStation, trainStop, subway, tram, bus }
 
 class Station with ClusterItem {
   final String id;
@@ -19,14 +19,10 @@ class Station with ClusterItem {
     required this.type,
   });
 
-  factory Station.fromOverpassElement(Map<String, dynamic> element) {
+  factory Station.fromOverpassElement(StationType type, Map<String, dynamic> element) {
     final tags = element['tags'] ?? {};
     final name = tags['name'] ?? 'Unnamed Station';
     final nameEn = tags?['name:en'];
-    final typeTag = tags['station'] ?? tags['railway'] ?? '';
-    final type = typeTag == 'subway' || typeTag == 'subway_entrance'
-        ? StationType.subway
-        : StationType.train;
 
     return Station(
       id: element['id'].toString(),

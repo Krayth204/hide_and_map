@@ -22,7 +22,11 @@ class FeatureFetcher {
   static String _polygonQuery(List<LatLng> boundary) =>
       boundary.map((p) => '${p.latitude} ${p.longitude}').join(' ');
 
-  static Future<List<Station>> fetchStations(List<LatLng> boundary) async {
+  static Future<List<Station>> _fetchStationsGeneric(
+    List<LatLng> boundary,
+    String nodeFilter,
+    StationType type,
+  ) async {
     if (boundary.isEmpty) return [];
 
     final polygonQuery = _polygonQuery(boundary);
@@ -30,14 +34,55 @@ class FeatureFetcher {
         """
       [out:json][timeout:300];
       (
-        node["railway"="station"](poly:"$polygonQuery");
-        node["station"="subway"](poly:"$polygonQuery");
+        $nodeFilter(poly:"$polygonQuery");
       );
       out body;
     """;
 
     final elements = await _fetchElements(query);
-    return elements.map(Station.fromOverpassElement).toList();
+    final result = <Station>[];
+    for (var element in elements) {
+      final station = Station.fromOverpassElement(type, element);
+      final alreadyThere = result.any((e) => e.name == station.name);
+      if (!alreadyThere) result.add(station);
+    }
+    return result;
+  }
+
+  static Future<List<Station>> fetchTrainStations(List<LatLng> boundary) {
+    return _fetchStationsGeneric(
+      boundary,
+      'node["railway"="station"]["station"!="subway"]',
+      StationType.trainStation,
+    );
+  }
+
+  static Future<List<Station>> fetchTrainStops(List<LatLng> boundary) {
+    return _fetchStationsGeneric(
+      boundary,
+      'node["railway"="halt"]',
+      StationType.trainStop,
+    );
+  }
+
+  static Future<List<Station>> fetchSubwayStations(List<LatLng> boundary) {
+    return _fetchStationsGeneric(
+      boundary,
+      'node["station"="subway"]',
+      StationType.subway,
+    );
+  }
+
+  static Future<List<Station>> fetchTramStops(List<LatLng> boundary) {
+    return _fetchStationsGeneric(
+      boundary,
+      'node["railway"="tram_stop"]',
+      StationType.tram,
+    );
+  }
+
+  static Future<List<Station>> fetchBusStops(List<LatLng> boundary) {
+    return _fetchStationsGeneric(boundary, 'node["highway"="bus_stop"]', StationType.bus);
   }
 
   static Future<List<MapPOI>> fetchThemeParks(List<LatLng> boundary) async {
@@ -73,15 +118,22 @@ class FeatureFetcher {
   }
 
   static Future<List<MapPOI>> fetchConsulates(List<LatLng> boundary) async {
-    return _fetchGeneric(boundary, 'diplomatic', 'consulate', POIType.consulate);
+    return _fetchGeneric(
+      boundary,
+      'diplomatic',
+      'consulate',
+      POIType.consulate,
+      additional: '["consulate"!="honorary_consul"]["consulate"!="honorary_consulate"]',
+    );
   }
 
   static Future<List<MapPOI>> _fetchGeneric<T>(
     List<LatLng> boundary,
     String key,
     String value,
-    POIType type,
-  ) async {
+    POIType type, {
+    String additional = "",
+  }) async {
     if (boundary.isEmpty) return [];
 
     final polygonQuery = _polygonQuery(boundary);
@@ -89,7 +141,7 @@ class FeatureFetcher {
         """
       [out:json][timeout:300];
       (
-        nwr["$key"="$value"](poly:"$polygonQuery");
+        nwr["$key"="$value"]$additional(poly:"$polygonQuery");
       );
       out geom;
     """;
