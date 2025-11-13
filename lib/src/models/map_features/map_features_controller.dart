@@ -6,136 +6,219 @@ import 'feature_marker_provider.dart';
 import 'station.dart';
 import 'map_poi.dart';
 
+class StationState {
+  List<Station> data = [];
+  bool fetched = false;
+  bool fetching = false;
+  bool visible = false;
+}
+
+class PoiState {
+  List<MapPOI> data = [];
+  bool fetched = false;
+  bool fetching = false;
+  bool visible = false;
+}
+
 class MapFeaturesController extends ChangeNotifier {
   final FeatureMarkerProvider _featureMarkerProvider;
   List<LatLng> _playAreaBoundary = [];
 
-  List<Station> _stations = [];
-  bool _stationsFetched = false;
-  bool isFetchingStations = false;
+  bool _busStopsWarningDismissed = false;
 
-  List<MapPOI> _themeParks = [];
-  List<MapPOI> _zoos = [];
-  List<MapPOI> _aquariums = [];
-  List<MapPOI> _golfCourses = [];
-  List<MapPOI> _museums = [];
-  List<MapPOI> _movieTheaters = [];
-  List<MapPOI> _hospitals = [];
-  List<MapPOI> _libraries = [];
-  List<MapPOI> _consulates = [];
+  bool get busStopsWarningDismissed => _busStopsWarningDismissed;
 
-  bool _themeParksFetched = false;
-  bool _zoosFetched = false;
-  bool _aquariumsFetched = false;
-  bool _golfCoursesFetched = false;
-  bool _museumsFetched = false;
-  bool _movieTheatersFetched = false;
-  bool _hospitalsFetched = false;
-  bool _librariesFetched = false;
-  bool _consulatesFetched = false;
+  void dismissBusStopsWarning() {
+    _busStopsWarningDismissed = true;
+  }
 
-  bool isFetchingThemeParks = false;
-  bool isFetchingZoos = false;
-  bool isFetchingAquariums = false;
-  bool isFetchingGolfCourses = false;
-  bool isFetchingMuseums = false;
-  bool isFetchingMovieTheaters = false;
-  bool isFetchingHospitals = false;
-  bool isFetchingLibraries = false;
-  bool isFetchingConsulates = false;
+  final Map<StationType, StationState> _stationStates = {
+    StationType.trainStation: StationState(),
+    StationType.trainStop: StationState(),
+    StationType.subway: StationState(),
+    StationType.tram: StationState(),
+    StationType.bus: StationState(),
+  };
 
-  bool _showRailwayStations = false;
-  bool _showTrainStations = false;
-  bool _showSubwayStations = false;
-  bool _showThemeParks = false;
-  bool _showZoos = false;
-  bool _showAquariums = false;
-  bool _showGolfCourses = false;
-  bool _showMuseums = false;
-  bool _showMovieTheaters = false;
-  bool _showHospitals = false;
-  bool _showLibraries = false;
-  bool _showConsulates = false;
+  Map<StationType, bool> _previousStationVisibility = {};
+
+  final Map<POIType, PoiState> _poiStates = {
+    POIType.themePark: PoiState(),
+    POIType.zoo: PoiState(),
+    POIType.aquarium: PoiState(),
+    POIType.golfCourse: PoiState(),
+    POIType.museum: PoiState(),
+    POIType.movieTheater: PoiState(),
+    POIType.hospital: PoiState(),
+    POIType.library: PoiState(),
+    POIType.consulate: PoiState(),
+  };
 
   MapFeaturesController(this._featureMarkerProvider);
 
-  bool get showRailwayStations => _showRailwayStations;
-  bool get showTrainStations => _showTrainStations;
-  bool get showSubwayStations => _showSubwayStations;
+  bool get showTrainStations => _stationStates[StationType.trainStation]!.visible;
+  bool get showTrainStops => _stationStates[StationType.trainStop]!.visible;
+  bool get showSubwayStations => _stationStates[StationType.subway]!.visible;
+  bool get showTramStops => _stationStates[StationType.tram]!.visible;
+  bool get showBusStops => _stationStates[StationType.bus]!.visible;
   bool get showHidingZones => _featureMarkerProvider.hidingZonesVisible;
-  bool get showThemeParks => _showThemeParks;
-  bool get showZoos => _showZoos;
-  bool get showAquariums => _showAquariums;
-  bool get showGolfCourses => _showGolfCourses;
-  bool get showMuseums => _showMuseums;
-  bool get showMovieTheaters => _showMovieTheaters;
-  bool get showHospitals => _showHospitals;
-  bool get showLibraries => _showLibraries;
-  bool get showConsulates => _showConsulates;
+  bool get showThemeParks => _poiStates[POIType.themePark]!.visible;
+  bool get showZoos => _poiStates[POIType.zoo]!.visible;
+  bool get showAquariums => _poiStates[POIType.aquarium]!.visible;
+  bool get showGolfCourses => _poiStates[POIType.golfCourse]!.visible;
+  bool get showMuseums => _poiStates[POIType.museum]!.visible;
+  bool get showMovieTheaters => _poiStates[POIType.movieTheater]!.visible;
+  bool get showHospitals => _poiStates[POIType.hospital]!.visible;
+  bool get showLibraries => _poiStates[POIType.library]!.visible;
+  bool get showConsulates => _poiStates[POIType.consulate]!.visible;
 
-  bool get railwayPartial =>
-      (_showTrainStations || _showSubwayStations) &&
-      !(_showTrainStations && _showSubwayStations);
+  List<Station> get stations {
+    final visibleLists = _stationStates.entries
+        .where((e) => e.value.visible)
+        .expand((e) => e.value.data)
+        .toList();
+    return visibleLists;
+  }
 
-  List<Station> get stations => _stations
-      .where(
-        (station) =>
-            (station.type == StationType.train && _showTrainStations) ||
-            (station.type == StationType.subway && _showSubwayStations),
-      )
-      .toList();
-  List<MapPOI> get themeParks => _showThemeParks ? _themeParks : <MapPOI>[];
-  List<MapPOI> get zoos => _showZoos ? _zoos : <MapPOI>[];
-  List<MapPOI> get aquariums => _showAquariums ? _aquariums : <MapPOI>[];
-  List<MapPOI> get golfCourses => _showGolfCourses ? _golfCourses : <MapPOI>[];
-  List<MapPOI> get museums => _showMuseums ? _museums : <MapPOI>[];
-  List<MapPOI> get movieTheaters => _showMovieTheaters ? _movieTheaters : <MapPOI>[];
-  List<MapPOI> get hospitals => _showHospitals ? _hospitals : <MapPOI>[];
-  List<MapPOI> get libraries => _showLibraries ? _libraries : <MapPOI>[];
-  List<MapPOI> get consulates => _showConsulates ? _consulates : <MapPOI>[];
+  bool get anyStationTypeVisible => _stationStates.values.any((state) => state.visible);
 
-  void toggleRailwayStations(bool value) async {
-    _showRailwayStations = value;
-    _showTrainStations = value;
-    _showSubwayStations = value;
+  bool get isFetchingStations => _stationStates.values.any((state) => state.fetching);
 
-    if (value) await _fetchStationsIfNeeded();
+  List<MapPOI> get themeParks => _getPoiList(POIType.themePark);
+  List<MapPOI> get zoos => _getPoiList(POIType.zoo);
+  List<MapPOI> get aquariums => _getPoiList(POIType.aquarium);
+  List<MapPOI> get golfCourses => _getPoiList(POIType.golfCourse);
+  List<MapPOI> get museums => _getPoiList(POIType.museum);
+  List<MapPOI> get movieTheaters => _getPoiList(POIType.movieTheater);
+  List<MapPOI> get hospitals => _getPoiList(POIType.hospital);
+  List<MapPOI> get libraries => _getPoiList(POIType.library);
+  List<MapPOI> get consulates => _getPoiList(POIType.consulate);
+
+  List<MapPOI> _getPoiList(POIType type) {
+    return _poiStates[type]!.visible ? _poiStates[type]!.data : <MapPOI>[];
+  }
+
+  bool get isFetchingTrainStations => _stationStates[StationType.trainStation]!.fetching;
+  bool get isFetchingTrainStops => _stationStates[StationType.trainStop]!.fetching;
+  bool get isFetchingSubwayStations => _stationStates[StationType.subway]!.fetching;
+  bool get isFetchingTramStops => _stationStates[StationType.tram]!.fetching;
+  bool get isFetchingBusStops => _stationStates[StationType.bus]!.fetching;
+  bool get isFetchingThemeParks => _poiStates[POIType.themePark]!.fetching;
+  bool get isFetchingZoos => _poiStates[POIType.zoo]!.fetching;
+  bool get isFetchingAquariums => _poiStates[POIType.aquarium]!.fetching;
+  bool get isFetchingGolfCourses => _poiStates[POIType.golfCourse]!.fetching;
+  bool get isFetchingMuseums => _poiStates[POIType.museum]!.fetching;
+  bool get isFetchingMovieTheaters => _poiStates[POIType.movieTheater]!.fetching;
+  bool get isFetchingHospitals => _poiStates[POIType.hospital]!.fetching;
+  bool get isFetchingLibraries => _poiStates[POIType.library]!.fetching;
+  bool get isFetchingConsulates => _poiStates[POIType.consulate]!.fetching;
+
+  void toggleStations(bool value) async {
+    if (!value) {
+      _previousStationVisibility = {
+        for (var k in _stationStates.keys) k: _stationStates[k]!.visible,
+      };
+      for (var state in _stationStates.values) {
+        state.visible = false;
+      }
+      _setFeatureMarkerProviderStations();
+      notifyListeners();
+      return;
+    }
+
+    if (_previousStationVisibility.isNotEmpty) {
+      for (var entry in _previousStationVisibility.entries) {
+        _stationStates[entry.key]!.visible = entry.value;
+      }
+    } else {
+      for (var k in _stationStates.keys) {
+        _stationStates[k]!.visible = k == StationType.trainStation;
+      }
+    }
+
+    final toFetch = _stationStates.entries
+        .where((e) => e.value.visible)
+        .map((e) => _fetchStationIfNeeded(e.key));
+    await Future.wait(toFetch);
+
     _setFeatureMarkerProviderStations();
     notifyListeners();
   }
 
   void toggleTrainStations(bool value) async {
-    _showTrainStations = value;
-    _showRailwayStations = _showTrainStations && _showSubwayStations;
+    await _toggleStationType(StationType.trainStation, value);
+  }
 
-    if (value) await _fetchStationsIfNeeded();
-    _setFeatureMarkerProviderStations();
-    notifyListeners();
+  void toggleTrainStops(bool value) async {
+    await _toggleStationType(StationType.trainStop, value);
   }
 
   void toggleSubwayStations(bool value) async {
-    _showSubwayStations = value;
-    _showRailwayStations = _showTrainStations && _showSubwayStations;
+    await _toggleStationType(StationType.subway, value);
+  }
 
-    if (value) await _fetchStationsIfNeeded();
+  void toggleTramStops(bool value) async {
+    await _toggleStationType(StationType.tram, value);
+  }
+
+  void toggleBusStops(bool value) async {
+    await _toggleStationType(StationType.bus, value);
+  }
+
+  Future<void> _toggleStationType(StationType type, bool value) async {
+    final state = _stationStates[type]!;
+    state.visible = value;
+
+    if (value) {
+      await _fetchStationIfNeeded(type);
+    }
+
     _setFeatureMarkerProviderStations();
     notifyListeners();
   }
 
-  void _setFeatureMarkerProviderStations() {
-    if (_showRailwayStations) {
-      _featureMarkerProvider.setStations(_stations);
-    } else if (_showTrainStations) {
-      _featureMarkerProvider.setStations(
-        _stations.where((station) => station.type == StationType.train).toList(),
+  Future<void> _fetchStationIfNeeded(StationType type) async {
+    final state = _stationStates[type]!;
+    if (state.fetched || state.fetching) return;
+
+    state.fetching = true;
+    notifyListeners();
+
+    try {
+      state.data = await _getStationFetchFunction(type)(_playAreaBoundary);
+      state.fetched = true;
+    } catch (e) {
+      debugPrint('Error fetching ${type.name}: $e');
+      rootScaffoldMessengerKey.currentState?.showSnackBar(
+        const SnackBar(
+          content: Text("Fetching station locations failed! Please try again!"),
+        ),
       );
-    } else if (_showSubwayStations) {
-      _featureMarkerProvider.setStations(
-        _stations.where((station) => station.type == StationType.subway).toList(),
-      );
-    } else {
-      _featureMarkerProvider.setStations(<Station>[]);
+      state.visible = false;
+    } finally {
+      state.fetching = false;
+      notifyListeners();
     }
+  }
+
+  Future<List<Station>> Function(List<LatLng>) _getStationFetchFunction(
+    StationType type,
+  ) {
+    return switch (type) {
+      StationType.trainStation => FeatureFetcher.fetchTrainStations,
+      StationType.trainStop => FeatureFetcher.fetchTrainStops,
+      StationType.subway => FeatureFetcher.fetchSubwayStations,
+      StationType.tram => FeatureFetcher.fetchTramStops,
+      StationType.bus => FeatureFetcher.fetchBusStops,
+    };
+  }
+
+  void _setFeatureMarkerProviderStations() {
+    final combined = _stationStates.values
+        .where((s) => s.visible)
+        .expand((s) => s.data)
+        .toList();
+    _featureMarkerProvider.setStations(combined);
   }
 
   void toggleHidingZones(bool value) async {
@@ -143,293 +226,99 @@ class MapFeaturesController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleThemeParks(bool value) async {
-    _showThemeParks = value;
-    if (value) {
-      await _fetchThemeParksIfNeeded();
-      _featureMarkerProvider.setThemeParks(_themeParks);
-    } else {
-      _featureMarkerProvider.setThemeParks(<MapPOI>[]);
-    }
+  void togglePoi(POIType type, bool value) async {
+    _poiStates[type]!.visible = value;
+
+    await _fetchPoiIfNeeded(type);
+    _updateFeatureMarkerProvider(type);
+
     notifyListeners();
   }
 
-  void toggleZoos(bool value) async {
-    _showZoos = value;
-    if (value) {
-      await _fetchZoosIfNeeded();
-      _featureMarkerProvider.setZoos(_zoos);
-    } else {
-      _featureMarkerProvider.setZoos(<MapPOI>[]);
-    }
-    notifyListeners();
-  }
+  Future<void> _fetchPoiIfNeeded(POIType type) async {
+    final state = _poiStates[type]!;
+    if (state.fetched || state.fetching) return;
 
-  void toggleAquariums(bool value) async {
-    _showAquariums = value;
-    if (value) {
-      await _fetchAquariumsIfNeeded();
-      _featureMarkerProvider.setAquariums(_aquariums);
-    } else {
-      _featureMarkerProvider.setAquariums(<MapPOI>[]);
-    }
-    notifyListeners();
-  }
-
-  void toggleGolfCourses(bool value) async {
-    _showGolfCourses = value;
-    if (value) {
-      await _fetchGolfCoursesIfNeeded();
-      _featureMarkerProvider.setGolfCourses(_golfCourses);
-    } else {
-      _featureMarkerProvider.setGolfCourses(<MapPOI>[]);
-    }
-    notifyListeners();
-  }
-
-  void toggleMuseums(bool value) async {
-    _showMuseums = value;
-    if (value) {
-      await _fetchMuseumsIfNeeded();
-      _featureMarkerProvider.setMuseums(_museums);
-    } else {
-      _featureMarkerProvider.setMuseums(<MapPOI>[]);
-    }
-    notifyListeners();
-  }
-
-  void toggleMovieTheaters(bool value) async {
-    _showMovieTheaters = value;
-    if (value) {
-      await _fetchMovieTheatersIfNeeded();
-      _featureMarkerProvider.setMovieTheaters(_movieTheaters);
-    } else {
-      _featureMarkerProvider.setMovieTheaters(<MapPOI>[]);
-    }
-    notifyListeners();
-  }
-
-  void toggleHospitals(bool value) async {
-    _showHospitals = value;
-    if (value) {
-      await _fetchHospitalsIfNeeded();
-      _featureMarkerProvider.setHospitals(_hospitals);
-    } else {
-      _featureMarkerProvider.setHospitals(<MapPOI>[]);
-    }
-    notifyListeners();
-  }
-
-  void toggleLibraries(bool value) async {
-    _showLibraries = value;
-    if (value) {
-      await _fetchLibrariesIfNeeded();
-      _featureMarkerProvider.setLibraries(_libraries);
-    } else {
-      _featureMarkerProvider.setLibraries(<MapPOI>[]);
-    }
-    notifyListeners();
-  }
-
-  void toggleConsulates(bool value) async {
-    _showConsulates = value;
-    if (value) {
-      await _fetchConsulatesIfNeeded();
-      _featureMarkerProvider.setConsulates(_consulates);
-    } else {
-      _featureMarkerProvider.setConsulates(<MapPOI>[]);
-    }
-    notifyListeners();
-  }
-
-  Future<void> _fetchStationsIfNeeded() async {
-    if (_stationsFetched || isFetchingStations) return;
-    isFetchingStations = true;
+    state.fetching = true;
     notifyListeners();
 
     try {
-      _stations = await FeatureFetcher.fetchStations(_playAreaBoundary);
-      _stationsFetched = true;
+      state.data = await _getFetchFunction(type)(_playAreaBoundary);
+      state.fetched = true;
     } catch (e) {
-      debugPrint('Error fetching stations: $e');
-      rootScaffoldMessengerKey.currentState?.showSnackBar(
-        const SnackBar(
-          content: Text("Fetching station locations failed! Please try again!"),
-        ),
-      );
-      _showRailwayStations = false;
-      _showTrainStations = false;
-      _showSubwayStations = false;
-    } finally {
-      isFetchingStations = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> _fetchThemeParksIfNeeded() async => _fetchGenericPoi(
-    _themeParksFetched,
-    isFetchingThemeParks,
-    FeatureFetcher.fetchThemeParks,
-    (v) => isFetchingThemeParks = v,
-    (v) => _themeParksFetched = v,
-    (list) => _themeParks = list,
-    () => _showThemeParks = false,
-  );
-
-  Future<void> _fetchZoosIfNeeded() async => _fetchGenericPoi(
-    _zoosFetched,
-    isFetchingZoos,
-    FeatureFetcher.fetchZoos,
-    (v) => isFetchingZoos = v,
-    (v) => _zoosFetched = v,
-    (list) => _zoos = list,
-    () => _showZoos = false,
-  );
-
-  Future<void> _fetchAquariumsIfNeeded() async => _fetchGenericPoi(
-    _aquariumsFetched,
-    isFetchingAquariums,
-    FeatureFetcher.fetchAquariums,
-    (v) => isFetchingAquariums = v,
-    (v) => _aquariumsFetched = v,
-    (list) => _aquariums = list,
-    () => _showAquariums = false,
-  );
-
-  Future<void> _fetchGolfCoursesIfNeeded() async => _fetchGenericPoi(
-    _golfCoursesFetched,
-    isFetchingGolfCourses,
-    FeatureFetcher.fetchGolfCourses,
-    (v) => isFetchingGolfCourses = v,
-    (v) => _golfCoursesFetched = v,
-    (list) => _golfCourses = list,
-    () => _showGolfCourses = false,
-  );
-
-  Future<void> _fetchMuseumsIfNeeded() async => _fetchGenericPoi(
-    _museumsFetched,
-    isFetchingMuseums,
-    FeatureFetcher.fetchMuseums,
-    (v) => isFetchingMuseums = v,
-    (v) => _museumsFetched = v,
-    (list) => _museums = list,
-    () => _showMuseums = false,
-  );
-
-  Future<void> _fetchMovieTheatersIfNeeded() async => _fetchGenericPoi(
-    _movieTheatersFetched,
-    isFetchingMovieTheaters,
-    FeatureFetcher.fetchMovieTheaters,
-    (v) => isFetchingMovieTheaters = v,
-    (v) => _movieTheatersFetched = v,
-    (list) => _movieTheaters = list,
-    () => _showMovieTheaters = false,
-  );
-
-  Future<void> _fetchHospitalsIfNeeded() async => _fetchGenericPoi(
-    _hospitalsFetched,
-    isFetchingHospitals,
-    FeatureFetcher.fetchHospitals,
-    (v) => isFetchingHospitals = v,
-    (v) => _hospitalsFetched = v,
-    (list) => _hospitals = list,
-    () => _showHospitals = false,
-  );
-
-  Future<void> _fetchLibrariesIfNeeded() async => _fetchGenericPoi(
-    _librariesFetched,
-    isFetchingLibraries,
-    FeatureFetcher.fetchLibraries,
-    (v) => isFetchingLibraries = v,
-    (v) => _librariesFetched = v,
-    (list) => _libraries = list,
-    () => _showLibraries = false,
-  );
-
-  Future<void> _fetchConsulatesIfNeeded() async => _fetchGenericPoi(
-    _consulatesFetched,
-    isFetchingConsulates,
-    FeatureFetcher.fetchConsulates,
-    (v) => isFetchingConsulates = v,
-    (v) => _consulatesFetched = v,
-    (list) => _consulates = list,
-    () => _showConsulates = false,
-  );
-
-  Future<void> _fetchGenericPoi(
-    bool fetchedFlag,
-    bool fetchingFlag,
-    Future<List<MapPOI>> Function(List<LatLng>) fetchFn,
-    void Function(bool) setFetching,
-    void Function(bool) setFetched,
-    void Function(List<MapPOI>) setList,
-    void Function() onFail,
-  ) async {
-    if (fetchedFlag || fetchingFlag) return;
-    setFetching(true);
-    notifyListeners();
-
-    try {
-      final result = await fetchFn(_playAreaBoundary);
-      setList(result);
-      setFetched(true);
-    } catch (e) {
-      debugPrint('Error fetching POI: $e');
+      debugPrint('Error fetching ${type.name}: $e');
       rootScaffoldMessengerKey.currentState?.showSnackBar(
         const SnackBar(content: Text("Fetching locations failed! Please try again!")),
       );
-      onFail();
+      state.visible = false;
     } finally {
-      setFetching(false);
+      state.fetching = false;
       notifyListeners();
+    }
+  }
+
+  Future<List<MapPOI>> Function(List<LatLng>) _getFetchFunction(POIType type) {
+    return switch (type) {
+      POIType.themePark => FeatureFetcher.fetchThemeParks,
+      POIType.zoo => FeatureFetcher.fetchZoos,
+      POIType.aquarium => FeatureFetcher.fetchAquariums,
+      POIType.golfCourse => FeatureFetcher.fetchGolfCourses,
+      POIType.museum => FeatureFetcher.fetchMuseums,
+      POIType.movieTheater => FeatureFetcher.fetchMovieTheaters,
+      POIType.hospital => FeatureFetcher.fetchHospitals,
+      POIType.library => FeatureFetcher.fetchLibraries,
+      POIType.consulate => FeatureFetcher.fetchConsulates,
+    };
+  }
+
+  void _updateFeatureMarkerProvider(POIType type) {
+    final data = _getPoiList(type);
+    switch (type) {
+      case POIType.themePark:
+        _featureMarkerProvider.setThemeParks(data);
+      case POIType.zoo:
+        _featureMarkerProvider.setZoos(data);
+      case POIType.aquarium:
+        _featureMarkerProvider.setAquariums(data);
+      case POIType.golfCourse:
+        _featureMarkerProvider.setGolfCourses(data);
+      case POIType.museum:
+        _featureMarkerProvider.setMuseums(data);
+      case POIType.movieTheater:
+        _featureMarkerProvider.setMovieTheaters(data);
+      case POIType.hospital:
+        _featureMarkerProvider.setHospitals(data);
+      case POIType.library:
+        _featureMarkerProvider.setLibraries(data);
+      case POIType.consulate:
+        _featureMarkerProvider.setConsulates(data);
     }
   }
 
   void setPlayAreaBoundary(List<LatLng> newBoundary) {
     if (!_areBoundariesEqual(_playAreaBoundary, newBoundary)) {
       _playAreaBoundary = newBoundary;
-
       _resetData();
       notifyListeners();
     }
   }
 
   void _resetData() {
-    _stations = [];
-    _stationsFetched = false;
+    _busStopsWarningDismissed = false;
+    _previousStationVisibility = {};
 
-    _themeParks = [];
-    _zoos = [];
-    _aquariums = [];
-    _golfCourses = [];
-    _museums = [];
-    _movieTheaters = [];
-    _hospitals = [];
-    _libraries = [];
-    _consulates = [];
+    for (var state in _stationStates.values) {
+      state.data = [];
+      state.fetched = false;
+      state.fetching = false;
+      state.visible = false;
+    }
 
-    _themeParksFetched = false;
-    _zoosFetched = false;
-    _aquariumsFetched = false;
-    _golfCoursesFetched = false;
-    _museumsFetched = false;
-    _movieTheatersFetched = false;
-    _hospitalsFetched = false;
-    _librariesFetched = false;
-    _consulatesFetched = false;
-
-    _showRailwayStations = false;
-    _showTrainStations = false;
-    _showSubwayStations = false;
-    _showThemeParks = false;
-    _showZoos = false;
-    _showAquariums = false;
-    _showGolfCourses = false;
-    _showMuseums = false;
-    _showMovieTheaters = false;
-    _showHospitals = false;
-    _showLibraries = false;
-    _showConsulates = false;
+    for (var state in _poiStates.values) {
+      state.data = [];
+      state.fetched = false;
+      state.visible = false;
+    }
 
     _featureMarkerProvider.resetAll();
   }

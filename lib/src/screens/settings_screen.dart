@@ -19,12 +19,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late LengthSystem _originalSystem;
   late double _originalZoneMeters;
 
+  late double _iconSizePx;
+  late double _originalIconSizePx;
+
   @override
   void initState() {
     super.initState();
     _lengthSystem = prefs.lengthSystem;
     _originalSystem = prefs.lengthSystem;
     _originalZoneMeters = prefs.hidingZoneSize;
+
+    final storedIconSize = prefs.iconSize;
+    _iconSizePx = storedIconSize.width;
+    _originalIconSizePx = _iconSizePx;
 
     double displayValue = _originalZoneMeters;
     if (_lengthSystem == LengthSystem.imperial) {
@@ -63,6 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       await prefs.setLengthSystem(_lengthSystem);
       await prefs.setHidingZoneSize(meters);
+      await prefs.setIconSize(Size(_iconSizePx, _iconSizePx));
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -75,6 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       _originalSystem = _lengthSystem;
       _originalZoneMeters = meters;
+      _originalIconSizePx = _iconSizePx;
     }
   }
 
@@ -84,7 +93,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       currentMeters = GeoMath.milesToMeters(currentMeters);
     }
     return _lengthSystem != _originalSystem ||
-        (currentMeters - _originalZoneMeters).abs() > 0.001;
+        (currentMeters - _originalZoneMeters).abs() > 0.001 ||
+        (_iconSizePx - _originalIconSizePx).abs() > 0.01;
   }
 
   Future<bool> _confirmDiscardChanges() async {
@@ -251,7 +261,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
               Card(
                 elevation: 2,
@@ -280,7 +290,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           color: Colors.grey[600],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
 
                       Wrap(
                         spacing: 8,
@@ -321,7 +331,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ],
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
 
                       TextFormField(
                         controller: _zoneController,
@@ -343,6 +353,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           }
                           return null;
                         },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.train, color: theme.colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Icon Size',
+                            style: theme.textTheme.titleMedium!.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Choose icon size used on the map.',
+                        style: theme.textTheme.bodySmall!.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          ChoiceChip(
+                            label: const Text('Small'),
+                            selected: _iconSizePx == 16,
+                            onSelected: (_) => setState(() => _iconSizePx = 16),
+                          ),
+                          ChoiceChip(
+                            label: const Text('Medium'),
+                            selected: _iconSizePx == 24,
+                            onSelected: (_) => setState(() => _iconSizePx = 24),
+                          ),
+                          ChoiceChip(
+                            label: const Text('Large'),
+                            selected: _iconSizePx == 32,
+                            onSelected: (_) => setState(() => _iconSizePx = 32),
+                          ),
+                        ],
                       ),
                     ],
                   ),

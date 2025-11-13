@@ -46,7 +46,6 @@ class _MapScreenState extends State<MapScreen> {
   String? _editingShapeId;
   MaterialColor? _editingShapeColor;
   LatLng? _locationForWeb;
-  BitmapDescriptor? _iconForWeb;
 
   final PlayAreaSelectorController _selectorController = PlayAreaSelectorController();
   late FeatureMarkerProvider _featureMarkerProvider;
@@ -81,18 +80,6 @@ class _MapScreenState extends State<MapScreen> {
         if (gS.playArea != null) {_loadGameState(gS)},
       },
     );
-    if (kIsWeb) {
-      BitmapDescriptor.asset(
-        ImageConfiguration(size: const Size(16, 16)),
-        'assets/markers/blue_marker.png',
-      ).then(
-        (asset) => {
-          setState(() {
-            _iconForWeb = asset;
-          }),
-        },
-      );
-    }
   }
 
   void _loadGameState(GameState gS) {
@@ -411,12 +398,12 @@ class _MapScreenState extends State<MapScreen> {
               polygonsToShow.addAll(_featurePolygons);
               circlesToShow.addAll(_featureCircles);
 
-              if (kIsWeb && _locationForWeb != null && _iconForWeb != null) {
+              if (kIsWeb && _locationForWeb != null) {
                 markersToShow.add(
                   Marker(
                     markerId: const MarkerId('locationMarker'),
                     position: _locationForWeb!,
-                    icon: _iconForWeb!,
+                    icon: icons.webLocationIcon,
                     onTap: () => _onMapTap(_locationForWeb!),
                   ),
                 );

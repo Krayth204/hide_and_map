@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
 import '../../models/map_features/map_features_controller.dart';
+import '../../models/map_features/map_poi.dart';
 
 class MapFeaturesPanel extends StatelessWidget {
   final MapFeaturesController controller;
@@ -29,7 +30,7 @@ class MapFeaturesPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  _buildRailwayTile(theme),
+                  _buildRailwayTile(context, theme),
 
                   const Divider(height: 24, thickness: 1),
 
@@ -40,7 +41,7 @@ class MapFeaturesPanel extends StatelessWidget {
                     color: const Color(0xFFFF6F00),
                     value: controller.showThemeParks,
                     isLoading: controller.isFetchingThemeParks,
-                    onChanged: controller.toggleThemeParks,
+                    onChanged: (b) => controller.togglePoi(POIType.themePark, b),
                   ),
                   _buildPoiTile(
                     theme: theme,
@@ -49,7 +50,7 @@ class MapFeaturesPanel extends StatelessWidget {
                     color: const Color(0xFF43A047),
                     value: controller.showZoos,
                     isLoading: controller.isFetchingZoos,
-                    onChanged: controller.toggleZoos,
+                    onChanged: (b) => controller.togglePoi(POIType.zoo, b),
                   ),
                   _buildPoiTile(
                     theme: theme,
@@ -58,7 +59,7 @@ class MapFeaturesPanel extends StatelessWidget {
                     color: const Color(0xFF3949AB),
                     value: controller.showAquariums,
                     isLoading: controller.isFetchingAquariums,
-                    onChanged: controller.toggleAquariums,
+                    onChanged: (b) => controller.togglePoi(POIType.aquarium, b),
                   ),
                   _buildPoiTile(
                     theme: theme,
@@ -67,7 +68,7 @@ class MapFeaturesPanel extends StatelessWidget {
                     color: const Color(0xFF7CB342),
                     value: controller.showGolfCourses,
                     isLoading: controller.isFetchingGolfCourses,
-                    onChanged: controller.toggleGolfCourses,
+                    onChanged: (b) => controller.togglePoi(POIType.golfCourse, b),
                   ),
                   _buildPoiTile(
                     theme: theme,
@@ -76,7 +77,7 @@ class MapFeaturesPanel extends StatelessWidget {
                     color: const Color(0xFF8E24AA),
                     value: controller.showMuseums,
                     isLoading: controller.isFetchingMuseums,
-                    onChanged: controller.toggleMuseums,
+                    onChanged: (b) => controller.togglePoi(POIType.museum, b),
                   ),
                   _buildPoiTile(
                     theme: theme,
@@ -85,7 +86,7 @@ class MapFeaturesPanel extends StatelessWidget {
                     color: const Color(0xFFD81B60),
                     value: controller.showMovieTheaters,
                     isLoading: controller.isFetchingMovieTheaters,
-                    onChanged: controller.toggleMovieTheaters,
+                    onChanged: (b) => controller.togglePoi(POIType.movieTheater, b),
                   ),
                   _buildPoiTile(
                     theme: theme,
@@ -94,7 +95,7 @@ class MapFeaturesPanel extends StatelessWidget {
                     color: const Color(0xFFC62828),
                     value: controller.showHospitals,
                     isLoading: controller.isFetchingHospitals,
-                    onChanged: controller.toggleHospitals,
+                    onChanged: (b) => controller.togglePoi(POIType.hospital, b),
                   ),
                   _buildPoiTile(
                     theme: theme,
@@ -103,7 +104,7 @@ class MapFeaturesPanel extends StatelessWidget {
                     color: const Color(0xFFFBC02D),
                     value: controller.showLibraries,
                     isLoading: controller.isFetchingLibraries,
-                    onChanged: controller.toggleLibraries,
+                    onChanged: (b) => controller.togglePoi(POIType.library, b),
                   ),
                   _buildPoiTile(
                     theme: theme,
@@ -112,7 +113,7 @@ class MapFeaturesPanel extends StatelessWidget {
                     color: const Color(0xFF0097A7),
                     value: controller.showConsulates,
                     isLoading: controller.isFetchingConsulates,
-                    onChanged: controller.toggleConsulates,
+                    onChanged: (b) => controller.togglePoi(POIType.consulate, b),
                   ),
 
                   const Divider(height: 32, thickness: 1),
@@ -132,7 +133,7 @@ class MapFeaturesPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildRailwayTile(ThemeData theme) {
+  Widget _buildRailwayTile(BuildContext context, ThemeData theme) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -146,52 +147,156 @@ class MapFeaturesPanel extends StatelessWidget {
             children: [
               const Icon(Icons.train, color: Colors.deepPurple),
               const SizedBox(width: 12),
-              Expanded(
-                child: Text('Railway Stations', style: theme.textTheme.titleMedium),
-              ),
-              if (controller.isFetchingStations)
-                const SizedBox(
-                  height: 48,
-                  width: 48,
-                  child: Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                )
-              else
-                Switch(
-                  value: controller.showRailwayStations || controller.railwayPartial,
-                  onChanged: controller.toggleRailwayStations,
-                  activeTrackColor: controller.railwayPartial
-                      ? Colors.blueGrey
-                      : theme.colorScheme.primary,
-                ),
+              Expanded(child: Text('Stations', style: theme.textTheme.titleMedium)),
+              controller.isFetchingStations
+                  ? Padding(
+                      padding: const EdgeInsets.only(right: 14.0),
+                      child: const SizedBox(
+                        height: 40,
+                        width: 40,
+                        child: Padding(
+                          padding: EdgeInsets.all(4.0),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    )
+                  : Switch(
+                      value: controller.anyStationTypeVisible,
+                      onChanged: controller.toggleStations,
+                      activeTrackColor: theme.colorScheme.primary,
+                    ),
             ],
           ),
           children: [
-            SwitchListTile(
-              title: const Text('Train Stations'),
+            _buildStationTile(
+              title: 'Train Stations',
               value: controller.showTrainStations,
-              onChanged: controller.toggleTrainStations,
-              secondary: const Icon(Icons.train_outlined, color: Colors.indigo),
+              isLoading: controller.isFetchingTrainStations,
+              onChanged: (value) => controller.toggleTrainStations(value),
+              icon: const Icon(Icons.train_outlined, color: Colors.indigo),
             ),
-            SwitchListTile(
-              title: const Text('Subway Stations'),
+            _buildStationTile(
+              title: 'Train Stops',
+              value: controller.showTrainStops,
+              isLoading: controller.isFetchingTrainStops,
+              onChanged: (value) => controller.toggleTrainStops(value),
+              icon: const Icon(Icons.train_outlined, color: Color(0xFF7B68EE)),
+            ),
+            _buildStationTile(
+              title: 'Subway Stations',
               value: controller.showSubwayStations,
-              onChanged: controller.toggleSubwayStations,
-              secondary: const Icon(Icons.subway_outlined, color: Colors.purple),
+              isLoading: controller.isFetchingSubwayStations,
+              onChanged: (value) => controller.toggleSubwayStations(value),
+              icon: const Icon(Icons.subway_outlined, color: Colors.purple),
             ),
-
-            if (controller.showRailwayStations || controller.railwayPartial)
-              SwitchListTile(
-                title: const Text('Hiding Zones'),
+            _buildStationTile(
+              title: 'Tram Stops',
+              value: controller.showTramStops,
+              isLoading: controller.isFetchingTramStops,
+              onChanged: (value) => controller.toggleTramStops(value),
+              icon: const Icon(Icons.tram_outlined, color: Color(0xFF8A2BE2)),
+            ),
+            _buildStationTile(
+              title: 'Bus Stops',
+              value: controller.showBusStops,
+              isLoading: controller.isFetchingBusStops,
+              onChanged: (value) => _handleBusStopsToggle(context, value),
+              icon: const Icon(Icons.directions_bus_outlined, color: Color(0xFFDA70D6)),
+            ),
+            if (controller.anyStationTypeVisible)
+              _buildStationTile(
+                title: 'Hiding Zones',
                 value: controller.showHidingZones,
-                onChanged: controller.toggleHidingZones,
-                secondary: const Icon(Icons.visibility, color: Colors.teal),
+                isLoading: false,
+                onChanged: (value) => controller.toggleHidingZones(value),
+                icon: const Icon(Icons.visibility, color: Colors.teal),
               ),
           ],
         ),
       ),
+    );
+  }
+
+  void _handleBusStopsToggle(BuildContext context, bool value) {
+    if (value && !controller.busStopsWarningDismissed) {
+      _showBusStopsWarningDialog(context);
+    } else {
+      controller.toggleBusStops(value);
+    }
+  }
+
+  void _showBusStopsWarningDialog(BuildContext context) {
+    bool dontAskAgain = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Performance Warning'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Enabling Bus Stops can significantly impact performance. \n'
+                'This feature is not recommended for large play areas.',
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Checkbox(
+                    value: dontAskAgain,
+                    onChanged: (value) {
+                      setState(() => dontAskAgain = value ?? false);
+                    },
+                  ),
+                  const Expanded(child: Text("Don't ask again")),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (dontAskAgain) {
+                  controller.dismissBusStopsWarning();
+                }
+                controller.toggleBusStops(true);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Enable'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStationTile({
+    required String title,
+    required bool value,
+    required bool isLoading,
+    required ValueChanged<bool> onChanged,
+    required Icon icon,
+  }) {
+    return ListTile(
+      title: Text(title),
+      leading: icon,
+      onTap: isLoading ? null : () => onChanged(!value),
+      trailing: isLoading
+          ? Padding(
+              padding: const EdgeInsets.only(left: 4.0, right: 14.0),
+              child: const SizedBox(
+                height: 32,
+                width: 32,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          : Switch(value: value, onChanged: onChanged),
     );
   }
 
@@ -215,7 +320,7 @@ class MapFeaturesPanel extends StatelessWidget {
         onTap: () => onChanged(!value),
         trailing: isLoading
             ? Padding(
-                padding: EdgeInsets.only(right: 14.0),
+                padding: const EdgeInsets.only(right: 14.0),
                 child: const SizedBox(
                   height: 32,
                   width: 32,

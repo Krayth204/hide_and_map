@@ -1,17 +1,18 @@
 // Entry point for the Hide and Map application.
 import 'package:flutter/material.dart';
-import 'src/models/map_features/feature_marker_provider.dart';
 import 'src/screens/map_screen.dart';
 import 'src/util/app_preferences.dart';
+import 'src/util/icon_provider.dart';
 
 AppPreferences prefs = AppPreferences();
+IconProvider icons = IconProvider();
 GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await prefs.init();
-  await FeatureMarkerProvider.loadMarkerIcons();
+  await icons.init();
 
   runApp(const HideAndMapApp());
 }
