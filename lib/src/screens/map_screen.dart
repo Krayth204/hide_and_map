@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -168,6 +169,14 @@ class _MapScreenState extends State<MapScreen> {
                   onTap: () {
                     Navigator.pop(context);
                     _editShape(shape);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.share),
+                  title: const Text('Share'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    shape.share();
                   },
                 ),
                 ListTile(
@@ -490,14 +499,40 @@ class _MapScreenState extends State<MapScreen> {
 
   void _decodeImport(String? imported, BuildContext context) {
     if (imported != null && imported.isNotEmpty) {
-      final gS = GameState.decodeGameState(imported);
-      if (gS.playArea != null) {
-        _loadGameState(gS);
-        _animateToPlayArea();
+      if (imported.startsWith('{')) {
+        if (gameState.playArea == null) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Set play zone first!")));
+          return;
+        }
+        try {
+          final Shape shape = ShapeFactory.fromJson(jsonDecode(imported));
+          if (gameState.shapes.any((element) => element.id == shape.id)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("This ${shape.type.name} is already there!")),
+            );
+            return;
+          }
+          setState(() {
+            gameState.shapes.add(shape);
+          });
+        } catch (e) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Import failed!")));
+          return;
+        }
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Import failed!")));
+        final gS = GameState.decodeGameState(imported);
+        if (gS.playArea != null) {
+          _loadGameState(gS);
+          _animateToPlayArea();
+        } else {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Import failed!")));
+        }
       }
     }
   }

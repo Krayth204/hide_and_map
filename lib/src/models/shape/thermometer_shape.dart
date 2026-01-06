@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hide_and_map/src/models/play_area/play_area.dart';
 import 'package:hide_and_map/src/models/shape/shape.dart';
@@ -8,28 +7,17 @@ import 'package:hide_and_map/src/util/location_provider.dart';
 import '../../util/color_helper.dart';
 import '../../util/geo_math.dart';
 
-class ThermometerShape implements Shape {
+class ThermometerShape extends Shape {
   @override
   final String id;
 
   @override
   final ShapeType type = ShapeType.thermometer;
 
-  @override
-  MaterialColor color;
-
-  @override
-  bool inverted;
-
   final List<LatLng> points;
   double distance = 0;
 
-  ThermometerShape(
-    this.id,
-    this.points, {
-    this.color = Colors.blue,
-    this.inverted = false,
-  }) {
+  ThermometerShape(this.id, this.points, {super.color, super.inverted}) {
     _calculateDistance();
   }
 
