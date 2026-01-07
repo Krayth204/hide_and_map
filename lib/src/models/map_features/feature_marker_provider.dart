@@ -237,6 +237,8 @@ class FeatureMarkerProvider extends ChangeNotifier {
         return icons.tramIcon;
       case StationType.bus:
         return icons.busIcon;
+      case StationType.ferry:
+        return icons.ferryIcon;
     }
   }
 

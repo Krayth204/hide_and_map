@@ -38,6 +38,7 @@ class MapFeaturesController extends ChangeNotifier {
     StationType.subway: StationState(),
     StationType.tram: StationState(),
     StationType.bus: StationState(),
+    StationType.ferry: StationState(),
   };
 
   Map<StationType, bool> _previousStationVisibility = {};
@@ -61,6 +62,7 @@ class MapFeaturesController extends ChangeNotifier {
   bool get showSubwayStations => _stationStates[StationType.subway]!.visible;
   bool get showTramStops => _stationStates[StationType.tram]!.visible;
   bool get showBusStops => _stationStates[StationType.bus]!.visible;
+  bool get showFerryStops => _stationStates[StationType.ferry]!.visible;
   bool get showHidingZones => _featureMarkerProvider.hidingZonesVisible;
   bool get showThemeParks => _poiStates[POIType.themePark]!.visible;
   bool get showZoos => _poiStates[POIType.zoo]!.visible;
@@ -103,6 +105,7 @@ class MapFeaturesController extends ChangeNotifier {
   bool get isFetchingSubwayStations => _stationStates[StationType.subway]!.fetching;
   bool get isFetchingTramStops => _stationStates[StationType.tram]!.fetching;
   bool get isFetchingBusStops => _stationStates[StationType.bus]!.fetching;
+  bool get isFetchingFerryStops => _stationStates[StationType.ferry]!.fetching;
   bool get isFetchingThemeParks => _poiStates[POIType.themePark]!.fetching;
   bool get isFetchingZoos => _poiStates[POIType.zoo]!.fetching;
   bool get isFetchingAquariums => _poiStates[POIType.aquarium]!.fetching;
@@ -165,6 +168,10 @@ class MapFeaturesController extends ChangeNotifier {
     await _toggleStationType(StationType.bus, value);
   }
 
+  void toggleFerryStops(bool value) async {
+    await _toggleStationType(StationType.ferry, value);
+  }
+
   Future<void> _toggleStationType(StationType type, bool value) async {
     final state = _stationStates[type]!;
     state.visible = value;
@@ -210,6 +217,7 @@ class MapFeaturesController extends ChangeNotifier {
       StationType.subway => FeatureFetcher.fetchSubwayStations,
       StationType.tram => FeatureFetcher.fetchTramStops,
       StationType.bus => FeatureFetcher.fetchBusStops,
+      StationType.ferry => FeatureFetcher.fetchFerryStops,
     };
   }
 
