@@ -24,7 +24,7 @@ class ShapePopup extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
         child: AnimatedBuilder(
           animation: controller,
           builder: (_, _) {
@@ -68,14 +68,6 @@ class ShapePopup extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const SizedBox(width: 24, height: 24),
-                    Expanded(
-                      child: Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ),
                     GestureDetector(
                       onTap: () async {
                         final selected = await showDialog<MaterialColor>(
@@ -97,11 +89,29 @@ class ShapePopup extends StatelessWidget {
                         ),
                       ),
                     ),
+
+                    Expanded(
+                      child: Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+
+                    IconButton(
+                      icon: const Icon(Icons.share, size: 24),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                      splashRadius: 24,
+                      onPressed: () {
+                        shape.share();
+                      },
+                    ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Text(instructions),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
 
                 if (shape.type == ShapeType.circle)
                   RadiusPicker(
@@ -129,7 +139,6 @@ class ShapePopup extends StatelessWidget {
                   ),
 
                 if (showInvertedCheckbox) ...[
-                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Checkbox(
@@ -141,7 +150,6 @@ class ShapePopup extends StatelessWidget {
                   ),
                 ],
 
-                const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(

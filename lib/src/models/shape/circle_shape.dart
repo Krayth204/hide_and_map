@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../util/color_helper.dart';
 import '../../util/geo_math.dart';
@@ -6,23 +5,17 @@ import '../play_area/play_area.dart';
 import 'shape.dart';
 import 'shape_object.dart';
 
-class CircleShape implements Shape {
+class CircleShape extends Shape {
   @override
   final String id;
 
   @override
   final ShapeType type = ShapeType.circle;
 
-  @override
-  MaterialColor color;
-
-  @override
-  bool inverted;
-
   LatLng center;
   double radius;
 
-  CircleShape(this.id, this.center, {this.color = Colors.blue, this.radius = 500, this.inverted = false});
+  CircleShape(this.id, this.center, {super.color, this.radius = 500, super.inverted});
 
   @override
   void addPoint(LatLng p) {

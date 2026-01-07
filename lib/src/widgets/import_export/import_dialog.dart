@@ -53,7 +53,7 @@ class _ImportDialogState extends State<ImportDialog> {
                       maxLines: 3,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
-                        hintText: "Paste your GameState string here",
+                        hintText: "Paste your game string here",
                       ),
                     ),
 
