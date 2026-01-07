@@ -36,7 +36,7 @@ class FeatureFetcher {
       (
         $nodeFilter(poly:"$polygonQuery");
       );
-      out body;
+      out geom;
     """;
 
     final elements = await _fetchElements(query);
@@ -52,7 +52,7 @@ class FeatureFetcher {
   static Future<List<Station>> fetchTrainStations(List<LatLng> boundary) {
     return _fetchStationsGeneric(
       boundary,
-      'node["railway"="station"]["station"!="subway"]',
+      'nwr["railway"="station"]["station"!="subway"]',
       StationType.trainStation,
     );
   }
@@ -60,7 +60,7 @@ class FeatureFetcher {
   static Future<List<Station>> fetchTrainStops(List<LatLng> boundary) {
     return _fetchStationsGeneric(
       boundary,
-      'node["railway"="halt"]',
+      'nwr["railway"="halt"]',
       StationType.trainStop,
     );
   }
@@ -68,7 +68,7 @@ class FeatureFetcher {
   static Future<List<Station>> fetchSubwayStations(List<LatLng> boundary) {
     return _fetchStationsGeneric(
       boundary,
-      'node["station"="subway"]',
+      'nwr["station"="subway"]',
       StationType.subway,
     );
   }
@@ -76,13 +76,17 @@ class FeatureFetcher {
   static Future<List<Station>> fetchTramStops(List<LatLng> boundary) {
     return _fetchStationsGeneric(
       boundary,
-      'node["railway"="tram_stop"]',
+      'nwr["railway"="tram_stop"]',
       StationType.tram,
     );
   }
 
   static Future<List<Station>> fetchBusStops(List<LatLng> boundary) {
-    return _fetchStationsGeneric(boundary, 'node["highway"="bus_stop"]', StationType.bus);
+    return _fetchStationsGeneric(boundary, 'nwr["highway"="bus_stop"]', StationType.bus);
+  }
+
+  static Future<List<Station>> fetchFerryStops(List<LatLng> boundary) {
+    return _fetchStationsGeneric(boundary, 'nwr["amenity"="ferry_terminal"]', StationType.ferry);
   }
 
   static Future<List<MapPOI>> fetchThemeParks(List<LatLng> boundary) async {

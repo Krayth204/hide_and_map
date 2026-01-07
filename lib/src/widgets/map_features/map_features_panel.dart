@@ -203,6 +203,13 @@ class MapFeaturesPanel extends StatelessWidget {
               onChanged: (value) => _handleBusStopsToggle(context, value),
               icon: const Icon(Icons.directions_bus_outlined, color: Color(0xFFDA70D6)),
             ),
+            _buildStationTile(
+              title: 'Ferry Stops',
+              value: controller.showFerryStops,
+              isLoading: controller.isFetchingFerryStops,
+              onChanged: (value) => controller.toggleFerryStops(value),
+              icon: const Icon(Icons.directions_ferry_outlined, color: Color(0xFF0921AA)),
+            ),
             if (controller.anyStationTypeVisible)
               _buildStationTile(
                 title: 'Hiding Zones',

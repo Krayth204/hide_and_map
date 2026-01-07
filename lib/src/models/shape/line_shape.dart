@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../util/color_helper.dart';
 import '../../util/geo_math.dart';
@@ -6,23 +5,17 @@ import '../play_area/play_area.dart';
 import 'shape.dart';
 import 'shape_object.dart';
 
-class LineShape implements Shape {
+class LineShape extends Shape {
   @override
   final String id;
 
   @override
   final ShapeType type = ShapeType.line;
 
-  @override
-  MaterialColor color;
-
-  @override
-  bool inverted = false;
-
   final List<LatLng> points;
   double distance = 0;
 
-  LineShape(this.id, this.points, {this.color = Colors.blue}) {
+  LineShape(this.id, this.points, {super.color}) {
     _calculateDistance();
   }
 

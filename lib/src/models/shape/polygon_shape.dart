@@ -1,27 +1,20 @@
-import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../util/color_helper.dart';
 import '../play_area/play_area.dart';
 import 'shape.dart';
 import 'shape_object.dart';
 
-class PolygonShape implements Shape {
+class PolygonShape extends Shape {
   @override
   final String id;
 
   @override
   final ShapeType type = ShapeType.polygon;
 
-  @override
-  MaterialColor color;
-  
-  @override
-  bool inverted;
-
   final List<LatLng> points;
 
-  PolygonShape(this.id, this.points, {this.color= Colors.blue, this.inverted = false});
-  
+  PolygonShape(this.id, this.points, {super.color, super.inverted});
+
   @override
   void addPoint(LatLng p) {
     points.add(p);
