@@ -75,6 +75,17 @@ flutter:
   assets:
     - assets/map_style.json
     - assets/markers/blue_marker.png
+    - assets/markers/timer_blue_marker.png
+    - assets/markers/timer_cyan_marker.png
+    - assets/markers/timer_green_marker.png
+    - assets/markers/timer_yellow_marker.png
+    - assets/markers/timer_orange_marker.png
+    - assets/markers/timer_red_marker.png
+    - assets/markers/timer_pink_marker.png
+    - assets/markers/timer_purple_marker.png
+    - assets/markers/timer_deep_purple_marker.png
+    - assets/markers/timer_indigo_marker.png
+    - assets/markers/timer_grey_marker.png
     - assets/markers/train_station_marker.png
     - assets/markers/train_stop_marker.png
     - assets/markers/tram_stop_marker.png

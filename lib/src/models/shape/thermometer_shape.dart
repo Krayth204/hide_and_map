@@ -64,8 +64,8 @@ class ThermometerShape extends Shape {
   }
 
   @override
-  double getDistance() {
-    return distance;
+  String getDistance() {
+    return GeoMath.toDistanceString(distance);
   }
 
   @override

@@ -23,6 +23,7 @@ import '../widgets/play_area/play_area_selector.dart';
 
 import '../models/shape/shape_controller.dart';
 import '../models/shape/shape.dart';
+import '../widgets/shape/shape_actions_bottom_sheet.dart';
 import '../widgets/shape/shape_popup.dart';
 import 'settings_screen.dart';
 
@@ -151,7 +152,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onShapeTapped(String id) {
-    if (_isBottomSheetOpen) return; // <-- Prevent opening multiple sheets
+    if (_isBottomSheetOpen) return;
     _isBottomSheetOpen = true;
 
     final shape = gameState.shapes.firstWhere((s) => s.id == id);
@@ -159,40 +160,17 @@ class _MapScreenState extends State<MapScreen> {
     showModalBottomSheet(
       context: context,
       builder: (_) {
-        return SafeArea(
-          child: PointerInterceptor(
-            child: Wrap(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.edit),
-                  title: const Text('Edit'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _editShape(shape);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.share),
-                  title: const Text('Share'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    shape.share();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.delete),
-                  title: const Text('Remove'),
-                  onTap: () {
-                    setState(() {
-                      gameState.shapes.removeWhere((s) => s.id == id);
-                    });
-                    GameState.saveGameState(gameState);
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
-          ),
+        return ShapeActionsBottomSheet(
+          shape: shape,
+          onEdit: () {
+            _editShape(shape);
+          },
+          onDelete: () {
+            setState(() {
+              gameState.shapes.removeWhere((s) => s.id == id);
+            });
+            GameState.saveGameState(gameState);
+          },
         );
       },
     ).whenComplete(() {
@@ -356,6 +334,14 @@ class _MapScreenState extends State<MapScreen> {
                     child: const Icon(Icons.change_history),
                   ),
                 ),
+                PointerInterceptor(
+                  child: FloatingActionButton(
+                    heroTag: 'fab_add_timer',
+                    onPressed: () => _openAddShape(ShapeType.timer),
+                    tooltip: 'Add Timer',
+                    child: const Icon(Icons.timer_outlined),
+                  ),
+                ),
               ],
             )
           : null,
@@ -389,6 +375,7 @@ class _MapScreenState extends State<MapScreen> {
                   if (obj.circle != null) circlesToShow.add(obj.circle!);
                   if (obj.polyline != null) polylinesToShow.add(obj.polyline!);
                   if (obj.polygon != null) polygonsToShow.add(obj.polygon!);
+                  if (obj.marker != null) markersToShow.add(obj.marker!);
                 }
 
                 if (_activeShapeController != null) {

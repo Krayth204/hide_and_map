@@ -41,8 +41,8 @@ class PolygonShape extends Shape {
   }
 
   @override
-  double getDistance() {
-    return 0;
+  String getDistance() {
+    return "0";
   }
 
   @override

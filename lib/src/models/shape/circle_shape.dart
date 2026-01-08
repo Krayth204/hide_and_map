@@ -43,8 +43,8 @@ class CircleShape extends Shape {
   }
 
   @override
-  double getDistance() {
-    return radius;
+  String getDistance() {
+    return GeoMath.toDistanceString(radius);
   }
 
   @override
