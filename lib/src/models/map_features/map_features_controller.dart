@@ -281,26 +281,7 @@ class MapFeaturesController extends ChangeNotifier {
 
   void _updateFeatureMarkerProvider(POIType type) {
     final data = _getPoiList(type);
-    switch (type) {
-      case POIType.themePark:
-        _featureMarkerProvider.setThemeParks(data);
-      case POIType.zoo:
-        _featureMarkerProvider.setZoos(data);
-      case POIType.aquarium:
-        _featureMarkerProvider.setAquariums(data);
-      case POIType.golfCourse:
-        _featureMarkerProvider.setGolfCourses(data);
-      case POIType.museum:
-        _featureMarkerProvider.setMuseums(data);
-      case POIType.movieTheater:
-        _featureMarkerProvider.setMovieTheaters(data);
-      case POIType.hospital:
-        _featureMarkerProvider.setHospitals(data);
-      case POIType.library:
-        _featureMarkerProvider.setLibraries(data);
-      case POIType.consulate:
-        _featureMarkerProvider.setConsulates(data);
-    }
+    _featureMarkerProvider.setPOIs(type, data);
   }
 
   void setPlayAreaBoundary(List<LatLng> newBoundary) {
