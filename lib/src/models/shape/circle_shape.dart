@@ -104,7 +104,7 @@ class CircleShape extends Shape {
     return {
       'id': id,
       'ty': 'c',
-      'col': color.value,
+      'col': color.toARGB32(),
       'sce': {'lat': center.latitude, 'lng': center.longitude},
       'sra': radius,
       'i': inverted ? 't' : 'f',

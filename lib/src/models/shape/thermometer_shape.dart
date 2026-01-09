@@ -151,7 +151,7 @@ class ThermometerShape extends Shape {
     return {
       'id': id,
       'ty': 't',
-      'col': color.value,
+      'col': color.toARGB32(),
       'pts': points.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList(),
       'i': inverted ? 't' : 'f',
     };

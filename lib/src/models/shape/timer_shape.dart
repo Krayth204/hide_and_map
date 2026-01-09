@@ -79,7 +79,7 @@ class TimerShape extends Shape {
       marker: Marker(
         markerId: MarkerId(customId ?? id),
         position: location,
-        icon: icons.timerIcons[color]!,
+        icon: icons.timerIcons[color.toARGB32()]!,
         consumeTapEvents: editable,
         onTap: () => editable ? onTap?.call(id) : null,
       ),
@@ -97,7 +97,7 @@ class TimerShape extends Shape {
           location = p;
           notify();
         },
-        icon: icons.timerIcons[color]!,
+        icon: icons.timerIcons[color.toARGB32()]!,
       ),
     };
   }
@@ -107,7 +107,7 @@ class TimerShape extends Shape {
     return {
       'id': id,
       'ty': 'ti',
-      'col': color.value,
+      'col': color.toARGB32(),
       'na': name,
       'loc': {'lat': location.latitude, 'lng': location.longitude},
       'sta': startTime.toIso8601String(),

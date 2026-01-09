@@ -108,7 +108,7 @@ class LineShape extends Shape {
     return {
       'id': id,
       'ty': 'l',
-      'col': color.value,
+      'col': color.toARGB32(),
       'pts': points.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList(),
     };
   }

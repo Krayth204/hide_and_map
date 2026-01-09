@@ -504,6 +504,7 @@ class _MapScreenState extends State<MapScreen> {
           setState(() {
             gameState.shapes.add(shape);
           });
+          GameState.saveGameState(gameState);
         } catch (e) {
           ScaffoldMessenger.of(
             context,

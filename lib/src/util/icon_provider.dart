@@ -25,7 +25,7 @@ class IconProvider {
   late BitmapDescriptor consulateIcon;
 
   late BitmapDescriptor webLocationIcon;
-  late Map<Color, BitmapDescriptor> timerIcons;
+  late Map<int, BitmapDescriptor> timerIcons;
 
   late Size _iconSize;
 
@@ -108,17 +108,17 @@ class IconProvider {
     );
 
     timerIcons = {
-      Colors.blue: await _loadTimerIcon('blue'),
-      Colors.cyan: await _loadTimerIcon('cyan'),
-      Colors.green: await _loadTimerIcon('green'),
-      Colors.yellow: await _loadTimerIcon('yellow'),
-      Colors.orange: await _loadTimerIcon('orange'),
-      Colors.red: await _loadTimerIcon('red'),
-      Colors.pink: await _loadTimerIcon('pink'),
-      Colors.purple: await _loadTimerIcon('purple'),
-      Colors.deepPurple: await _loadTimerIcon('deep_purple'),
-      Colors.indigo: await _loadTimerIcon('indigo'),
-      Colors.grey: await _loadTimerIcon('grey'),
+      Colors.blue.toARGB32(): await _loadTimerIcon('blue'),
+      Colors.cyan.toARGB32(): await _loadTimerIcon('cyan'),
+      Colors.green.toARGB32(): await _loadTimerIcon('green'),
+      Colors.yellow.toARGB32(): await _loadTimerIcon('yellow'),
+      Colors.orange.toARGB32(): await _loadTimerIcon('orange'),
+      Colors.red.toARGB32(): await _loadTimerIcon('red'),
+      Colors.pink.toARGB32(): await _loadTimerIcon('pink'),
+      Colors.purple.toARGB32(): await _loadTimerIcon('purple'),
+      Colors.deepPurple.toARGB32(): await _loadTimerIcon('deep_purple'),
+      Colors.indigo.toARGB32(): await _loadTimerIcon('indigo'),
+      Colors.grey.toARGB32(): await _loadTimerIcon('grey'),
     };
   }
 
