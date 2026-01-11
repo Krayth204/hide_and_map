@@ -6,7 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../play_area/play_area.dart';
 import 'shape_object.dart';
 
-enum ShapeType { circle, line, polygon, thermometer, timer }
+enum ShapeType { circle, line, polygon, multiPolygon, thermometer, timer }
 
 abstract class Shape {
   String get id;

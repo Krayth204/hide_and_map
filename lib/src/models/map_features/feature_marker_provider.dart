@@ -10,6 +10,7 @@ import '../../../main.dart';
 import '../../util/geo_math.dart';
 import '../../util/location_provider.dart';
 import 'map_poi.dart';
+import 'map_overlay.dart';
 import 'station.dart';
 
 class PoiConfig {
@@ -17,20 +18,18 @@ class PoiConfig {
   final Color color;
   final BitmapDescriptor Function() icon;
 
-  const PoiConfig({
-    required this.type,
-    required this.color,
-    required this.icon,
-  });
+  const PoiConfig({required this.type, required this.color, required this.icon});
 }
 
 class FeatureMarkerProvider extends ChangeNotifier {
   final void Function(LatLng point, MarkerId markerId) _onMarkerTap;
+  final void Function(MapOverlay overlay) _onOverlayTap;
 
   final Set<Polygon> _polygons = {};
+  final Set<Polygon> _overlayPolygons = {};
   final Set<Circle> _circles = {};
 
-  Set<Polygon> get getPolygons => {..._polygons};
+  Set<Polygon> get getPolygons => {..._polygons, ..._overlayPolygons};
   Set<Circle> get getCircles => {..._circles};
 
   bool _hidingZonesVisible = false;
@@ -45,7 +44,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
   final Map<POIType, ClusterManager<MapPOI>> _poiManagers = {};
   final Map<POIType, Set<Marker>> _poiMarkers = {};
 
-  FeatureMarkerProvider(this._onMarkerTap) {
+  FeatureMarkerProvider(this._onMarkerTap, this._onOverlayTap) {
     init();
   }
 
@@ -163,9 +162,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
         );
       };
 
-  Future<Marker> Function(Cluster<MapPOI>) _getPoiMarkerBuilder(
-    PoiConfig config,
-  ) =>
+  Future<Marker> Function(Cluster<MapPOI>) _getPoiMarkerBuilder(PoiConfig config) =>
       (cluster) async {
         if (!cluster.isMultiple) {
           _addPolygon(cluster.items.first, config.color);
@@ -177,11 +174,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
           markerId: markerId,
           position: cluster.location,
           anchor: const Offset(0.5, 0.5),
-          icon: await _getMarkerBitmap(
-            60,
-            config.color,
-            text: cluster.count.toString(),
-          ),
+          icon: await _getMarkerBitmap(60, config.color, text: cluster.count.toString()),
           consumeTapEvents: true,
           onTap: () => _onMarkerTap(cluster.location, markerId),
         );
@@ -224,10 +217,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
     }
   }
 
-  Future<Marker> _buildPoiMarker(
-    MapPOI poi,
-    BitmapDescriptor icon,
-  ) async {
+  Future<Marker> _buildPoiMarker(MapPOI poi, BitmapDescriptor icon) async {
     String title = poi.name;
 
     if (LocationProvider.lastLocation.latitude != 0.0 &&
@@ -247,11 +237,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
     );
   }
 
-  Future<BitmapDescriptor> _getMarkerBitmap(
-    int size,
-    Color color, {
-    String? text,
-  }) async {
+  Future<BitmapDescriptor> _getMarkerBitmap(int size, Color color, {String? text}) async {
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
 
@@ -266,25 +252,18 @@ class FeatureMarkerProvider extends ChangeNotifier {
       final painter = TextPainter(textDirection: TextDirection.ltr)
         ..text = TextSpan(
           text: text,
-          style: TextStyle(
-            fontSize: size / 3,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontSize: size / 3, color: Colors.white),
         )
         ..layout();
 
       painter.paint(
         canvas,
-        Offset(
-          size / 2 - painter.width / 2,
-          size / 2 - painter.height / 2,
-        ),
+        Offset(size / 2 - painter.width / 2, size / 2 - painter.height / 2),
       );
     }
 
     final image = await recorder.endRecording().toImage(size, size);
-    final bytes =
-        await image.toByteData(format: ImageByteFormat.png) as ByteData;
+    final bytes = await image.toByteData(format: ImageByteFormat.png) as ByteData;
 
     return BitmapDescriptor.bytes(bytes.buffer.asUint8List());
   }
@@ -292,9 +271,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
   void _addCircle(Station station) {
     if (!_hidingZonesVisible) return;
 
-    if (_circles.any(
-      (c) => GeoMath.distanceInMeters(c.center, station.location) < 316,
-    )) {
+    if (_circles.any((c) => GeoMath.distanceInMeters(c.center, station.location) < 316)) {
       return;
     }
 
@@ -324,6 +301,19 @@ class FeatureMarkerProvider extends ChangeNotifier {
     );
   }
 
+  void setOverlays(MapOverlayType type, List<MapOverlay> overlays) {
+    _overlayPolygons.removeWhere((p) => p.polygonId.value.startsWith(type.name));
+
+    for (final overlay in overlays) {
+      if (overlay.boundaryPolygons.isEmpty) continue;
+
+      _overlayPolygons.addAll(overlay.toPolygons(_onOverlayTap));
+    }
+
+    dataChanged = true;
+    notifyListeners();
+  }
+
   void setStations(List<Station> stations) {
     dataChanged = true;
     _circles.clear();
@@ -335,9 +325,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
     _poiManagers[type]?.setItems(items);
 
     if (items.isEmpty) {
-      _polygons.removeWhere(
-        (p) => p.mapsId.value.startsWith(type.name),
-      );
+      _polygons.removeWhere((p) => p.mapsId.value.startsWith(type.name));
     }
   }
 
@@ -373,17 +361,18 @@ class FeatureMarkerProvider extends ChangeNotifier {
   }
 
   Set<Marker> get allMarkers => {
-        ..._stationMarkers,
-        for (final markers in _poiMarkers.values) ...markers,
-      };
+    ..._stationMarkers,
+    for (final markers in _poiMarkers.values) ...markers,
+  };
 
   List<ClusterManager> get _allManagers => [
-        _stationClusterManager,
-        ..._poiManagers.values,
-      ];
+    _stationClusterManager,
+    ..._poiManagers.values,
+  ];
 
   void resetAll() {
     _polygons.clear();
+    _overlayPolygons.clear();
     _circles.clear();
     _stationClusterManager.setItems(<Station>[]);
 

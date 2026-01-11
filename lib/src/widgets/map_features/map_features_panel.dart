@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
 import '../../models/map_features/map_features_controller.dart';
 import '../../models/map_features/map_poi.dart';
+import '../../models/map_features/map_overlay.dart';
+import '../../models/map_features/station.dart';
 
 class MapFeaturesPanel extends StatelessWidget {
   final MapFeaturesController controller;
@@ -31,6 +33,10 @@ class MapFeaturesPanel extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   _buildRailwayTile(context, theme),
+
+                  const Divider(height: 24, thickness: 1),
+
+                  _buildBordersTile(theme),
 
                   const Divider(height: 24, thickness: 1),
 
@@ -149,13 +155,13 @@ class MapFeaturesPanel extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(child: Text('Stations', style: theme.textTheme.titleMedium)),
               controller.isFetchingStations
-                  ? Padding(
-                      padding: const EdgeInsets.only(right: 14.0),
-                      child: const SizedBox(
+                  ? const Padding(
+                      padding: EdgeInsets.only(right: 14),
+                      child: SizedBox(
                         height: 40,
                         width: 40,
                         child: Padding(
-                          padding: EdgeInsets.all(4.0),
+                          padding: EdgeInsets.all(4),
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       ),
@@ -172,42 +178,42 @@ class MapFeaturesPanel extends StatelessWidget {
               title: 'Train Stations',
               value: controller.showTrainStations,
               isLoading: controller.isFetchingTrainStations,
-              onChanged: (value) => controller.toggleTrainStations(value),
+              onChanged: (v) => controller.toggleStationType(StationType.trainStation, v),
               icon: const Icon(Icons.train_outlined, color: Colors.indigo),
             ),
             _buildStationTile(
               title: 'Train Stops',
               value: controller.showTrainStops,
               isLoading: controller.isFetchingTrainStops,
-              onChanged: (value) => controller.toggleTrainStops(value),
+              onChanged: (v) => controller.toggleStationType(StationType.trainStop, v),
               icon: const Icon(Icons.train_outlined, color: Color(0xFF7B68EE)),
             ),
             _buildStationTile(
               title: 'Subway Stations',
               value: controller.showSubwayStations,
               isLoading: controller.isFetchingSubwayStations,
-              onChanged: (value) => controller.toggleSubwayStations(value),
+              onChanged: (v) => controller.toggleStationType(StationType.subway, v),
               icon: const Icon(Icons.subway_outlined, color: Colors.purple),
             ),
             _buildStationTile(
               title: 'Tram Stops',
               value: controller.showTramStops,
               isLoading: controller.isFetchingTramStops,
-              onChanged: (value) => controller.toggleTramStops(value),
+              onChanged: (v) => controller.toggleStationType(StationType.tram, v),
               icon: const Icon(Icons.tram_outlined, color: Color(0xFF8A2BE2)),
             ),
             _buildStationTile(
               title: 'Bus Stops',
               value: controller.showBusStops,
               isLoading: controller.isFetchingBusStops,
-              onChanged: (value) => _handleBusStopsToggle(context, value),
+              onChanged: (v) => _handleBusStopsToggle(context, v),
               icon: const Icon(Icons.directions_bus_outlined, color: Color(0xFFDA70D6)),
             ),
             _buildStationTile(
               title: 'Ferry Stops',
               value: controller.showFerryStops,
               isLoading: controller.isFetchingFerryStops,
-              onChanged: (value) => controller.toggleFerryStops(value),
+              onChanged: (v) => controller.toggleStationType(StationType.ferry, v),
               icon: const Icon(Icons.directions_ferry_outlined, color: Color(0xFF0921AA)),
             ),
             if (controller.anyStationTypeVisible)
@@ -215,7 +221,7 @@ class MapFeaturesPanel extends StatelessWidget {
                 title: 'Hiding Zones',
                 value: controller.showHidingZones,
                 isLoading: false,
-                onChanged: (value) => controller.toggleHidingZones(value),
+                onChanged: controller.toggleHidingZones,
                 icon: const Icon(Icons.visibility, color: Colors.teal),
               ),
           ],
@@ -228,7 +234,7 @@ class MapFeaturesPanel extends StatelessWidget {
     if (value && !controller.busStopsWarningDismissed) {
       _showBusStopsWarningDialog(context);
     } else {
-      controller.toggleBusStops(value);
+      controller.toggleStationType(StationType.bus, value);
     }
   }
 
@@ -272,7 +278,7 @@ class MapFeaturesPanel extends StatelessWidget {
                 if (dontAskAgain) {
                   controller.dismissBusStopsWarning();
                 }
-                controller.toggleBusStops(true);
+                controller.toggleStationType(StationType.bus, true);
                 Navigator.of(context).pop();
               },
               child: const Text('Enable'),
@@ -292,11 +298,106 @@ class MapFeaturesPanel extends StatelessWidget {
   }) {
     return ListTile(
       title: Text(title),
+      contentPadding: const EdgeInsets.only(left: 4, right: 4),
       leading: icon,
       onTap: isLoading ? null : () => onChanged(!value),
       trailing: isLoading
           ? Padding(
               padding: const EdgeInsets.only(left: 4.0, right: 14.0),
+              child: const SizedBox(
+                height: 32,
+                width: 32,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          : Switch(value: value, onChanged: onChanged),
+    );
+  }
+
+  Widget _buildBordersTile(ThemeData theme) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: ExpansionTile(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+          childrenPadding: const EdgeInsets.only(left: 16, right: 8, bottom: 8),
+          title: Row(
+            children: [
+              const Icon(Icons.border_outer, color: Colors.brown),
+              const SizedBox(width: 12),
+              Expanded(child: Text('Borders', style: theme.textTheme.titleMedium)),
+              controller.isFetchingOverlays
+                  ? const Padding(
+                      padding: EdgeInsets.only(right: 14),
+                      child: SizedBox(
+                        height: 40,
+                        width: 40,
+                        child: Padding(
+                          padding: EdgeInsets.all(4),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    )
+                  : Switch(
+                      value: controller.anyOverlayTypeVisible,
+                      onChanged: controller.toggleOverlays,
+                    ),
+            ],
+          ),
+          children: [
+            _buildOverlayTile(
+              title: 'International',
+              value: controller.showBorderInternational,
+              isLoading: controller.isFetchingBorderInters,
+              onChanged: (v) => controller.toggleOverlay(MapOverlayType.borderInter, v),
+            ),
+            _buildOverlayTile(
+              title: 'Level 1 Division',
+              value: controller.showBorder1AD,
+              isLoading: controller.isFetchingBorder1ADs,
+              onChanged: (v) => controller.toggleOverlay(MapOverlayType.border1AD, v),
+            ),
+            _buildOverlayTile(
+              title: 'Level 2 Division',
+              value: controller.showBorder2AD,
+              isLoading: controller.isFetchingBorder2ADs,
+              onChanged: (v) => controller.toggleOverlay(MapOverlayType.border2AD, v),
+            ),
+            _buildOverlayTile(
+              title: 'Level 3 Division',
+              value: controller.showBorder3AD,
+              isLoading: controller.isFetchingBorder3ADs,
+              onChanged: (v) => controller.toggleOverlay(MapOverlayType.border3AD, v),
+            ),
+            _buildOverlayTile(
+              title: 'Level 4 Division',
+              value: controller.showBorder4AD,
+              isLoading: controller.isFetchingBorder4ADs,
+              onChanged: (v) => controller.toggleOverlay(MapOverlayType.border4AD, v),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOverlayTile({
+    required String title,
+    required bool value,
+    required bool isLoading,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return ListTile(
+      title: Text(title),
+      contentPadding: const EdgeInsets.only(left: 4, right: 4),
+      leading: const Icon(Icons.timeline, color: Colors.brown),
+      onTap: isLoading ? null : () => onChanged(!value),
+      trailing: isLoading
+          ? Padding(
+              padding: const EdgeInsets.only(left: 4, right: 14),
               child: const SizedBox(
                 height: 32,
                 width: 32,
@@ -322,12 +423,13 @@ class MapFeaturesPanel extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.only(left: 16, right: 16),
         leading: Icon(icon, color: color),
         title: Text(title, style: const TextStyle(fontSize: 16)),
         onTap: () => onChanged(!value),
         trailing: isLoading
             ? Padding(
-                padding: const EdgeInsets.only(right: 14.0),
+                padding: const EdgeInsets.only(right: 14),
                 child: const SizedBox(
                   height: 32,
                   width: 32,

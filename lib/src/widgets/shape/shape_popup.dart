@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:hide_and_map/src/util/app_preferences.dart';
+import '../../models/shape/multi_polygon_shape.dart';
 import '../../models/shape/shape.dart';
 import '../../models/shape/shape_controller.dart';
 import '../../models/shape/timer_shape.dart';
@@ -82,6 +83,11 @@ class _ShapePopupState extends State<ShapePopup> {
                 showUndoReset = true;
                 showInvertedCheckbox = true;
                 break;
+              case ShapeType.multiPolygon:
+                final s = shape as MultiPolygonShape;
+                title = widget.controller.edit ? 'Edit ${s.name}' : 'Add ${s.name}';
+                instructions = '';
+                showInvertedCheckbox = true;
               case ShapeType.thermometer:
                 title = widget.controller.edit ? 'Edit Thermometer' : 'Add Thermometer';
                 showUndoReset = true;
@@ -142,8 +148,8 @@ class _ShapePopupState extends State<ShapePopup> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(instructions),
+                if (instructions.isNotEmpty) const SizedBox(height: 4),
+                if (instructions.isNotEmpty) Text(instructions),
                 const SizedBox(height: 4),
 
                 if (shape.type == ShapeType.circle)
@@ -255,5 +261,15 @@ class _ShapePopupState extends State<ShapePopup> {
   }
 }
 
-final List<double> metricRadiusValues = [500, 1000, 2000, 5000, 10000, 15000, 40000, 80000, 160000];
-final List<double> imperialRadiusValues = [ 0.25, 0.5, 1, 3, 5, 10, 25, 50, 100];
+final List<double> metricRadiusValues = [
+  500,
+  1000,
+  2000,
+  5000,
+  10000,
+  15000,
+  40000,
+  80000,
+  160000,
+];
+final List<double> imperialRadiusValues = [0.25, 0.5, 1, 3, 5, 10, 25, 50, 100];

@@ -3,6 +3,8 @@ import 'dart:math' show Random;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../util/color_helper.dart';
 import '../play_area/play_area.dart';
+import 'multi_polygon_shape.dart';
+import 'serializable_polygon.dart';
 import 'timer_shape.dart';
 import 'circle_shape.dart';
 import 'line_shape.dart';
@@ -21,6 +23,8 @@ class ShapeFactory {
         return LineShape(id, List.empty(growable: true));
       case ShapeType.polygon:
         return PolygonShape(id, List.empty(growable: true));
+      case ShapeType.multiPolygon:
+        return MultiPolygonShape(id, List.empty(growable: true));
       case ShapeType.thermometer:
         return ThermometerShape(id, List.empty(growable: true));
       case ShapeType.timer:
@@ -47,6 +51,16 @@ class ShapeFactory {
       case ShapeType.polygon:
         final s = shape as PolygonShape;
         return PolygonShape(s.id, [...s.points], color: s.color, inverted: s.inverted);
+
+      case ShapeType.multiPolygon:
+        final s = shape as MultiPolygonShape;
+        return MultiPolygonShape(
+          s.id,
+          s.polygons,
+          name: s.name,
+          color: s.color,
+          inverted: s.inverted,
+        );
 
       case ShapeType.thermometer:
         final s = shape as ThermometerShape;
@@ -92,6 +106,14 @@ class ShapeFactory {
         final pts = (json['pts'] as List).map((p) => LatLng(p['lat'], p['lng'])).toList();
         final inverted = (json['i'] as String) == 't';
         return PolygonShape(id, pts, color: color, inverted: inverted);
+
+      case ShapeType.multiPolygon:
+        final pts = (json['pgs'] as List)
+            .map((p) => SerializablePolygon.fromJson(p))
+            .toList();
+        final name = json['na'] ?? 'MultiPolygon';
+        final inverted = (json['i'] as String) == 't';
+        return MultiPolygonShape(id, pts, name: name, color: color, inverted: inverted);
 
       case ShapeType.thermometer:
         final pts = (json['pts'] as List).map((p) => LatLng(p['lat'], p['lng'])).toList();

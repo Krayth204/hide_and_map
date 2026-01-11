@@ -54,16 +54,18 @@ class PolygonShape extends Shape {
   }) {
     if (points.length < 3) return const ShapeObject();
     return ShapeObject(
-      polygon: Polygon(
-        polygonId: PolygonId(customId ?? id),
-        points: inverted ? playArea.getBoundary() : List<LatLng>.from(points),
-        holes: inverted ? [points] : const [],
-        strokeColor: color.shade700,
-        strokeWidth: 2,
-        fillColor: color.withAlpha(115),
-        consumeTapEvents: editable,
-        onTap: () => editable ? onTap?.call(id) : null,
-      ),
+      polygons: [
+        Polygon(
+          polygonId: PolygonId(customId ?? id),
+          points: inverted ? playArea.getBoundary() : List<LatLng>.from(points),
+          holes: inverted ? [points] : const [],
+          strokeColor: color.shade700,
+          strokeWidth: 2,
+          fillColor: color.withAlpha(115),
+          consumeTapEvents: editable,
+          onTap: () => editable ? onTap?.call(id) : null,
+        ),
+      ],
     );
   }
 

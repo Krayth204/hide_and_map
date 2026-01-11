@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 
 import 'map_poi.dart';
+import 'map_overlay.dart';
 import 'station.dart';
 
 class FeatureFetcher {
@@ -42,7 +44,18 @@ class FeatureFetcher {
 
     final query = _buildQuery(filter, boundary);
     final elements = await _fetchElements(query);
-    return elements.map(parser).toList();
+
+    final result = <T>[];
+
+    for (final e in elements) {
+      try {
+        result.add(parser(e));
+      } catch (err) {
+        log('Element parsing failed: $err');
+      }
+    }
+
+    return result;
   }
 
   static Future<List<Station>> _fetchStations(
@@ -81,6 +94,49 @@ class FeatureFetcher {
 
   static Future<List<Station>> fetchFerryStops(List<LatLng> boundary) =>
       _fetchStations(boundary, 'nwr["amenity"="ferry_terminal"]', StationType.ferry);
+
+  static Future<List<MapOverlay>> _fetchOverlays(
+    List<LatLng> boundary,
+    String filter,
+    MapOverlayType type,
+  ) {
+    return _fetchAndParse(
+      boundary,
+      filter,
+      (e) => MapOverlay.fromOverpassElement(type, e),
+    );
+  }
+
+  static Future<List<MapOverlay>> fetchBorderInternational(List<LatLng> boundary) =>
+      _fetchOverlays(
+        boundary,
+        'rel["boundary"="administrative"]["admin_level"="2"]["name"]',
+        MapOverlayType.borderInter,
+      );
+
+  static Future<List<MapOverlay>> fetchBorder1AD(List<LatLng> boundary) => _fetchOverlays(
+    boundary,
+    'rel["boundary"="administrative"]["admin_level"="4"]["name"]',
+    MapOverlayType.border1AD,
+  );
+
+  static Future<List<MapOverlay>> fetchBorder2AD(List<LatLng> boundary) => _fetchOverlays(
+    boundary,
+    'rel["boundary"="administrative"]["admin_level"="6"]["name"]',
+    MapOverlayType.border2AD,
+  );
+
+  static Future<List<MapOverlay>> fetchBorder3AD(List<LatLng> boundary) => _fetchOverlays(
+    boundary,
+    'rel["boundary"="administrative"]["admin_level"="8"]["name"]',
+    MapOverlayType.border3AD,
+  );
+
+  static Future<List<MapOverlay>> fetchBorder4AD(List<LatLng> boundary) => _fetchOverlays(
+    boundary,
+    'rel["boundary"="administrative"]["admin_level"="9"]["name"]',
+    MapOverlayType.border4AD,
+  );
 
   static Future<List<MapPOI>> _fetchPOIs(
     List<LatLng> boundary,

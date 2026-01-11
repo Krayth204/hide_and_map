@@ -10,11 +10,15 @@ import '../../main.dart';
 import '../models/game_state.dart';
 import '../models/map_features/map_features_controller.dart';
 import '../models/map_features/feature_marker_provider.dart';
+import '../models/map_features/map_overlay.dart';
 import '../models/play_area/play_area.dart';
 import '../models/play_area/play_area_selector_controller.dart';
+import '../models/shape/multi_polygon_shape.dart';
+import '../models/shape/serializable_polygon.dart';
 import '../models/shape/shape_factory.dart';
 import '../util/color_helper.dart';
 import '../util/location_provider.dart';
+import '../util/polygon_simplifier.dart';
 import '../widgets/import_export/import_dialog.dart';
 import '../widgets/import_export/share_dialog.dart';
 import '../widgets/map_features/map_features_panel.dart';
@@ -61,7 +65,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    _featureMarkerProvider = FeatureMarkerProvider(_onMarkerTap);
+    _featureMarkerProvider = FeatureMarkerProvider(_onMarkerTap, _onOverlayTap);
     _featureMarkerProvider.addListener(() {
       var isDifferent = !_featureMarkers.containsAll(_featureMarkerProvider.allMarkers);
       if (_featureMarkerProvider.dataChanged) {
@@ -141,6 +145,54 @@ class _MapScreenState extends State<MapScreen> {
       _lastpressed = markerId;
     }
     _onMapTap(position);
+  }
+
+  void _onOverlayTap(MapOverlay overlay) {
+    if (_isBottomSheetOpen) return;
+    if (_activeShapeController != null) return;
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return PointerInterceptor(
+          child: AlertDialog(
+            title: const Text('Create Polygon'),
+            content: Text('Do you want to add "${overlay.name}" as a polygon?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _createPolygonFromOverlay(overlay);
+                },
+                child: const Text('Create'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _createPolygonFromOverlay(MapOverlay overlay) {
+    var shape =
+        ShapeFactory.createShape(ShapeType.multiPolygon, gameState.playArea!)
+            as MultiPolygonShape;
+    shape.name = overlay.name;
+    shape.polygons = overlay.boundaryPolygons
+        .map(
+          (bp) => SerializablePolygon(
+            outer: PolygonSimplifier.simplify(bp.outer, toleranceMeters: overlay.toleranceMeters()),
+            holes: bp.holes.map((h) => PolygonSimplifier.simplify(h, toleranceMeters: 5)).toList(),
+          ),
+        )
+        .toList();
+    setState(() {
+      _activeShapeController = ShapeController(shape);
+    });
   }
 
   void _onMapTap(LatLng point) {
@@ -374,7 +426,7 @@ class _MapScreenState extends State<MapScreen> {
 
                   if (obj.circle != null) circlesToShow.add(obj.circle!);
                   if (obj.polyline != null) polylinesToShow.add(obj.polyline!);
-                  if (obj.polygon != null) polygonsToShow.add(obj.polygon!);
+                  if (obj.polygons.isNotEmpty) polygonsToShow.addAll(obj.polygons);
                   if (obj.marker != null) markersToShow.add(obj.marker!);
                 }
 
@@ -384,7 +436,8 @@ class _MapScreenState extends State<MapScreen> {
                   );
                   if (preview.circle != null) circlesToShow.add(preview.circle!);
                   if (preview.polyline != null) polylinesToShow.add(preview.polyline!);
-                  if (preview.polygon != null) polygonsToShow.add(preview.polygon!);
+                  if (preview.polygons.isNotEmpty)
+                    polygonsToShow.addAll(preview.polygons);
 
                   markersToShow.addAll(_activeShapeController!.getMarkers());
                 }

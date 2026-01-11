@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:hide_and_map/src/models/shape/multi_polygon_shape.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 import '../../models/shape/shape.dart';
@@ -52,6 +53,8 @@ class _ShapeActionsBottomSheetState extends State<ShapeActionsBottomSheet> {
         return 'Line';
       case ShapeType.polygon:
         return 'Polygon';
+      case ShapeType.multiPolygon:
+        return (widget.shape as MultiPolygonShape).name;
       case ShapeType.thermometer:
         return 'Thermometer';
       case ShapeType.timer:
