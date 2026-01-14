@@ -64,8 +64,8 @@ class ThermometerShape extends Shape {
   }
 
   @override
-  double getDistance() {
-    return distance;
+  String getDistance() {
+    return GeoMath.toDistanceString(distance);
   }
 
   @override
@@ -106,15 +106,17 @@ class ThermometerShape extends Shape {
     );
 
     return ShapeObject(
-      polygon: Polygon(
-        polygonId: PolygonId(customId ?? id),
-        points: polygonPoints,
-        strokeColor: color.shade700,
-        strokeWidth: 2,
-        fillColor: color.withAlpha(115),
-        consumeTapEvents: editable,
-        onTap: () => editable ? onTap?.call(id) : null,
-      ),
+      polygons: [
+        Polygon(
+          polygonId: PolygonId(customId ?? id),
+          points: polygonPoints,
+          strokeColor: color.shade700,
+          strokeWidth: 2,
+          fillColor: color.withAlpha(115),
+          consumeTapEvents: editable,
+          onTap: () => editable ? onTap?.call(id) : null,
+        ),
+      ],
       polyline: Polyline(
         polylineId: PolylineId(customId ?? id),
         points: points,
@@ -151,7 +153,7 @@ class ThermometerShape extends Shape {
     return {
       'id': id,
       'ty': 't',
-      'col': color.value,
+      'col': color.toARGB32(),
       'pts': points.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList(),
       'i': inverted ? 't' : 'f',
     };

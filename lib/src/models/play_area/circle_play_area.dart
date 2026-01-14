@@ -18,7 +18,10 @@ class CirclePlayArea extends PlayArea {
   }
 
   @override
-  LatLng getCenter() => center;
+  LatLng getCenter() {
+    double round(double v) => double.parse(v.toStringAsFixed(5));
+    return LatLng(round(center.latitude), round(center.longitude));
+  }
 
   @override
   LatLngBounds getLatLngBounds() {

@@ -1,6 +1,7 @@
 // Entry point for the Hide and Map application.
 import 'package:flutter/material.dart';
 import 'src/screens/map_screen.dart';
+import 'src/screens/settings_screen.dart';
 import 'src/util/app_preferences.dart';
 import 'src/util/icon_provider.dart';
 
@@ -30,6 +31,13 @@ class HideAndMapApp extends StatelessWidget {
       ),
       scaffoldMessengerKey: rootScaffoldMessengerKey,
       home: const MapScreen(),
+      routes: {
+        '/settings': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as SettingsRouteArgs?;
+
+          return SettingsScreen(openAdvanced: args?.openAdvanced ?? false);
+        },
+      },
     );
   }
 }

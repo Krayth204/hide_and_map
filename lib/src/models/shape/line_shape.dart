@@ -59,8 +59,8 @@ class LineShape extends Shape {
   }
 
   @override
-  double getDistance() {
-    return distance;
+  String getDistance() {
+    return GeoMath.toDistanceString(distance);
   }
 
   @override
@@ -108,7 +108,7 @@ class LineShape extends Shape {
     return {
       'id': id,
       'ty': 'l',
-      'col': color.value,
+      'col': color.toARGB32(),
       'pts': points.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList(),
     };
   }

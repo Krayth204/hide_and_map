@@ -1,4 +1,4 @@
-import 'package:flutter/painting.dart';
+import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../main.dart';
@@ -25,6 +25,7 @@ class IconProvider {
   late BitmapDescriptor consulateIcon;
 
   late BitmapDescriptor webLocationIcon;
+  late Map<int, BitmapDescriptor> timerIcons;
 
   late Size _iconSize;
 
@@ -104,6 +105,27 @@ class IconProvider {
     webLocationIcon = await BitmapDescriptor.asset(
       ImageConfiguration(size: _iconSize),
       'assets/markers/blue_marker.png',
+    );
+
+    timerIcons = {
+      Colors.blue.toARGB32(): await _loadTimerIcon('blue'),
+      Colors.cyan.toARGB32(): await _loadTimerIcon('cyan'),
+      Colors.green.toARGB32(): await _loadTimerIcon('green'),
+      Colors.yellow.toARGB32(): await _loadTimerIcon('yellow'),
+      Colors.orange.toARGB32(): await _loadTimerIcon('orange'),
+      Colors.red.toARGB32(): await _loadTimerIcon('red'),
+      Colors.pink.toARGB32(): await _loadTimerIcon('pink'),
+      Colors.purple.toARGB32(): await _loadTimerIcon('purple'),
+      Colors.deepPurple.toARGB32(): await _loadTimerIcon('deep_purple'),
+      Colors.indigo.toARGB32(): await _loadTimerIcon('indigo'),
+      Colors.grey.toARGB32(): await _loadTimerIcon('grey'),
+    };
+  }
+
+  Future<BitmapDescriptor> _loadTimerIcon(String colorName) {
+    return BitmapDescriptor.asset(
+      ImageConfiguration(size: _iconSize + Offset(8, 8)),
+      'assets/markers/timer_${colorName}_marker.png',
     );
   }
 }

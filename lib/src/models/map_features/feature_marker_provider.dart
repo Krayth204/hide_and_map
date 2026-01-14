@@ -10,44 +10,91 @@ import '../../../main.dart';
 import '../../util/geo_math.dart';
 import '../../util/location_provider.dart';
 import 'map_poi.dart';
+import 'map_overlay.dart';
 import 'station.dart';
+
+class PoiConfig {
+  final POIType type;
+  final Color color;
+  final BitmapDescriptor Function() icon;
+
+  const PoiConfig({required this.type, required this.color, required this.icon});
+}
 
 class FeatureMarkerProvider extends ChangeNotifier {
   final void Function(LatLng point, MarkerId markerId) _onMarkerTap;
+  final void Function(MapOverlay overlay) _onOverlayTap;
+
   final Set<Polygon> _polygons = {};
+  final Set<Polygon> _overlayPolygons = {};
   final Set<Circle> _circles = {};
-  Set<Polygon> get getPolygons => {..._polygons};
+
+  Set<Polygon> get getPolygons => {..._polygons, ..._overlayPolygons};
   Set<Circle> get getCircles => {..._circles};
+
   bool _hidingZonesVisible = false;
   double _hidingZoneSize = prefs.hidingZoneSize;
+  bool get hidingZonesVisible => _hidingZonesVisible;
 
   bool dataChanged = false;
 
   late ClusterManager<Station> _stationClusterManager;
-  late ClusterManager<MapPOI> _themeParkClusterManager;
-  late ClusterManager<MapPOI> _zooClusterManager;
-  late ClusterManager<MapPOI> _aquariumClusterManager;
-  late ClusterManager<MapPOI> _golfCourseClusterManager;
-  late ClusterManager<MapPOI> _museumClusterManager;
-  late ClusterManager<MapPOI> _movieTheaterClusterManager;
-  late ClusterManager<MapPOI> _hospitalClusterManager;
-  late ClusterManager<MapPOI> _libraryClusterManager;
-  late ClusterManager<MapPOI> _consulateClusterManager;
-
   Set<Marker> _stationMarkers = {};
-  Set<Marker> _themeParkMarkers = {};
-  Set<Marker> _zooMarkers = {};
-  Set<Marker> _aquariumMarkers = {};
-  Set<Marker> _golfCourseMarkers = {};
-  Set<Marker> _museumMarkers = {};
-  Set<Marker> _movieTheaterMarkers = {};
-  Set<Marker> _hospitalMarkers = {};
-  Set<Marker> _libraryMarkers = {};
-  Set<Marker> _consulateMarkers = {};
 
-  FeatureMarkerProvider(this._onMarkerTap) {
+  final Map<POIType, ClusterManager<MapPOI>> _poiManagers = {};
+  final Map<POIType, Set<Marker>> _poiMarkers = {};
+
+  FeatureMarkerProvider(this._onMarkerTap, this._onOverlayTap) {
     init();
   }
+
+  final Map<POIType, PoiConfig> _poiConfigs = {
+    POIType.themePark: PoiConfig(
+      type: POIType.themePark,
+      color: const Color(0xFFFF6F00),
+      icon: () => icons.themeParkIcon,
+    ),
+    POIType.zoo: PoiConfig(
+      type: POIType.zoo,
+      color: const Color(0xFF43A047),
+      icon: () => icons.zooIcon,
+    ),
+    POIType.aquarium: PoiConfig(
+      type: POIType.aquarium,
+      color: const Color(0xFF3949AB),
+      icon: () => icons.aquariumIcon,
+    ),
+    POIType.golfCourse: PoiConfig(
+      type: POIType.golfCourse,
+      color: const Color(0xFF7CB342),
+      icon: () => icons.golfIcon,
+    ),
+    POIType.museum: PoiConfig(
+      type: POIType.museum,
+      color: const Color(0xFF8E24AA),
+      icon: () => icons.museumIcon,
+    ),
+    POIType.movieTheater: PoiConfig(
+      type: POIType.movieTheater,
+      color: const Color(0xFFD81B60),
+      icon: () => icons.cinemaIcon,
+    ),
+    POIType.hospital: PoiConfig(
+      type: POIType.hospital,
+      color: const Color(0xFFC62828),
+      icon: () => icons.hospitalIcon,
+    ),
+    POIType.library: PoiConfig(
+      type: POIType.library,
+      color: const Color(0xFFFBC02D),
+      icon: () => icons.libraryIcon,
+    ),
+    POIType.consulate: PoiConfig(
+      type: POIType.consulate,
+      color: const Color(0xFF0097A7),
+      icon: () => icons.consulateIcon,
+    ),
+  };
 
   void init() async {
     _stationClusterManager = _createClusterManager<Station>(
@@ -59,86 +106,16 @@ class FeatureMarkerProvider extends ChangeNotifier {
       markerBuilder: _getStationMarkerBuilder(),
     );
 
-    _themeParkClusterManager = _createClusterManager<MapPOI>(
-      items: [],
-      onMarkersUpdated: (markers) {
-        _themeParkMarkers = markers;
-        notifyListeners();
-      },
-      markerBuilder: _getPOIMarkerBuilder(const Color(0xFFFF6F00)),
-    );
-
-    _zooClusterManager = _createClusterManager<MapPOI>(
-      items: [],
-      onMarkersUpdated: (markers) {
-        _zooMarkers = markers;
-        notifyListeners();
-      },
-      markerBuilder: _getPOIMarkerBuilder(const Color(0xFF43A047)),
-    );
-
-    _aquariumClusterManager = _createClusterManager<MapPOI>(
-      items: [],
-      onMarkersUpdated: (markers) {
-        _aquariumMarkers = markers;
-        notifyListeners();
-      },
-      markerBuilder: _getPOIMarkerBuilder(const Color(0xFF3949AB)),
-    );
-
-    _golfCourseClusterManager = _createClusterManager<MapPOI>(
-      items: [],
-      onMarkersUpdated: (markers) {
-        _golfCourseMarkers = markers;
-        notifyListeners();
-      },
-      markerBuilder: _getPOIMarkerBuilder(const Color(0xFF7CB342)),
-    );
-
-    _museumClusterManager = _createClusterManager<MapPOI>(
-      items: [],
-      onMarkersUpdated: (markers) {
-        _museumMarkers = markers;
-        notifyListeners();
-      },
-      markerBuilder: _getPOIMarkerBuilder(const Color(0xFF8E24AA)),
-    );
-
-    _movieTheaterClusterManager = _createClusterManager<MapPOI>(
-      items: [],
-      onMarkersUpdated: (markers) {
-        _movieTheaterMarkers = markers;
-        notifyListeners();
-      },
-      markerBuilder: _getPOIMarkerBuilder(const Color(0xFFD81B60)),
-    );
-
-    _hospitalClusterManager = _createClusterManager<MapPOI>(
-      items: [],
-      onMarkersUpdated: (markers) {
-        _hospitalMarkers = markers;
-        notifyListeners();
-      },
-      markerBuilder: _getPOIMarkerBuilder(const Color(0xFFC62828)),
-    );
-
-    _libraryClusterManager = _createClusterManager<MapPOI>(
-      items: [],
-      onMarkersUpdated: (markers) {
-        _libraryMarkers = markers;
-        notifyListeners();
-      },
-      markerBuilder: _getPOIMarkerBuilder(const Color(0xFFFBC02D)),
-    );
-
-    _consulateClusterManager = _createClusterManager<MapPOI>(
-      items: [],
-      onMarkersUpdated: (markers) {
-        _consulateMarkers = markers;
-        notifyListeners();
-      },
-      markerBuilder: _getPOIMarkerBuilder(const Color(0xFF0097A7)),
-    );
+    for (final config in _poiConfigs.values) {
+      _poiManagers[config.type] = _createClusterManager<MapPOI>(
+        items: [],
+        onMarkersUpdated: (markers) {
+          _poiMarkers[config.type] = markers;
+          notifyListeners();
+        },
+        markerBuilder: _getPoiMarkerBuilder(config),
+      );
+    }
 
     prefs.addListener(() {
       if (prefs.hidingZoneSize != _hidingZoneSize) {
@@ -155,7 +132,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
   }) {
     return ClusterManager<T>(
       items,
-      (markers) => onMarkersUpdated(markers),
+      onMarkersUpdated,
       markerBuilder: markerBuilder,
       levels: const [1, 4.25, 6.5, 8.5, 10.0, 11.0],
       extraPercent: 0.2,
@@ -168,64 +145,62 @@ class FeatureMarkerProvider extends ChangeNotifier {
         if (!cluster.isMultiple) {
           _addCircle(cluster.items.first);
           return _buildStationMarker(cluster.items.first);
-        } else {
-          final markerId = MarkerId(cluster.getId());
-          return Marker(
-            markerId: markerId,
-            anchor: Offset(0.5, 0.5),
-            position: cluster.location,
-            icon: await _getMarkerBitmap(
-              60,
-              Colors.deepPurple,
-              text: cluster.count.toString(),
-            ),
-            consumeTapEvents: true,
-            onTap: () => _onMarkerTap.call(cluster.location, markerId),
-          );
         }
+
+        final markerId = MarkerId(cluster.getId());
+        return Marker(
+          markerId: markerId,
+          position: cluster.location,
+          anchor: const Offset(0.5, 0.5),
+          icon: await _getMarkerBitmap(
+            60,
+            Colors.deepPurple,
+            text: cluster.count.toString(),
+          ),
+          consumeTapEvents: true,
+          onTap: () => _onMarkerTap(cluster.location, markerId),
+        );
       };
 
-  Future<Marker> Function(Cluster<MapPOI>) _getPOIMarkerBuilder(Color color) =>
+  Future<Marker> Function(Cluster<MapPOI>) _getPoiMarkerBuilder(PoiConfig config) =>
       (cluster) async {
         if (!cluster.isMultiple) {
-          _addPolygon(cluster.items.first, color);
-          return _buildPoiMarker(cluster.items.first);
-        } else {
-          final markerId = MarkerId(cluster.getId());
-          return Marker(
-            markerId: MarkerId(cluster.getId()),
-            anchor: Offset(0.5, 0.5),
-            position: cluster.location,
-            icon: await _getMarkerBitmap(60, color, text: cluster.count.toString()),
-            consumeTapEvents: true,
-            onTap: () => _onMarkerTap.call(cluster.location, markerId),
-          );
+          _addPolygon(cluster.items.first, config.color);
+          return _buildPoiMarker(cluster.items.first, config.icon());
         }
+
+        final markerId = MarkerId(cluster.getId());
+        return Marker(
+          markerId: markerId,
+          position: cluster.location,
+          anchor: const Offset(0.5, 0.5),
+          icon: await _getMarkerBitmap(60, config.color, text: cluster.count.toString()),
+          consumeTapEvents: true,
+          onTap: () => _onMarkerTap(cluster.location, markerId),
+        );
       };
 
   Future<Marker> _buildStationMarker(Station station) async {
-    final icon = _getStationMarker(station.type);
-    String? distance;
+    String title = station.name;
+
     if (LocationProvider.lastLocation.latitude != 0.0 &&
         LocationProvider.lastLocation.longitude != 0.0) {
-      distance = GeoMath.toDistanceString(
-        GeoMath.distanceInMeters(LocationProvider.lastLocation, station.location),
-      );
+      title +=
+          ' (${GeoMath.toDistanceString(GeoMath.distanceInMeters(LocationProvider.lastLocation, station.location))})';
     }
-    String title = station.name;
-    title += distance != null ? ' ($distance)' : '';
+
     final markerId = MarkerId('station_${station.id}');
     return Marker(
       markerId: markerId,
       position: station.location,
-      icon: icon,
+      icon: _getStationIcon(station.type),
       infoWindow: InfoWindow(title: title, snippet: station.nameEn),
       consumeTapEvents: true,
-      onTap: () => _onMarkerTap.call(station.location, markerId),
+      onTap: () => _onMarkerTap(station.location, markerId),
     );
   }
 
-  BitmapDescriptor _getStationMarker(StationType type) {
+  BitmapDescriptor _getStationIcon(StationType type) {
     switch (type) {
       case StationType.trainStation:
         return icons.trainStationIcon;
@@ -242,17 +217,15 @@ class FeatureMarkerProvider extends ChangeNotifier {
     }
   }
 
-  Future<Marker> _buildPoiMarker(MapPOI poi) async {
-    final icon = _getPoiMarker(poi.type);
-    String? distance;
+  Future<Marker> _buildPoiMarker(MapPOI poi, BitmapDescriptor icon) async {
+    String title = poi.name;
+
     if (LocationProvider.lastLocation.latitude != 0.0 &&
         LocationProvider.lastLocation.longitude != 0.0) {
-      distance = GeoMath.toDistanceString(
-        GeoMath.distanceInMeters(LocationProvider.lastLocation, poi.center),
-      );
+      title +=
+          ' (${GeoMath.toDistanceString(GeoMath.distanceInMeters(LocationProvider.lastLocation, poi.center))})';
     }
-    String title = poi.name;
-    title += distance != null ? ' ($distance)' : '';
+
     final markerId = MarkerId('${poi.type.name}_${poi.id}');
     return Marker(
       markerId: markerId,
@@ -260,73 +233,48 @@ class FeatureMarkerProvider extends ChangeNotifier {
       icon: icon,
       infoWindow: InfoWindow(title: title, snippet: poi.nameEn),
       consumeTapEvents: true,
-      onTap: () => _onMarkerTap.call(poi.center, markerId),
+      onTap: () => _onMarkerTap(poi.center, markerId),
     );
   }
 
-  BitmapDescriptor _getPoiMarker(POIType type) {
-    switch (type) {
-      case POIType.themePark:
-        return icons.themeParkIcon;
-      case POIType.zoo:
-        return icons.zooIcon;
-      case POIType.aquarium:
-        return icons.aquariumIcon;
-      case POIType.golfCourse:
-        return icons.golfIcon;
-      case POIType.museum:
-        return icons.museumIcon;
-      case POIType.movieTheater:
-        return icons.cinemaIcon;
-      case POIType.hospital:
-        return icons.hospitalIcon;
-      case POIType.library:
-        return icons.libraryIcon;
-      case POIType.consulate:
-        return icons.consulateIcon;
-    }
-  }
-
   Future<BitmapDescriptor> _getMarkerBitmap(int size, Color color, {String? text}) async {
-    final PictureRecorder pictureRecorder = PictureRecorder();
-    final Canvas canvas = Canvas(pictureRecorder);
-    final Paint paint1 = Paint()..color = color;
-    final Paint paint2 = Paint()..color = Colors.white;
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder);
 
-    canvas.drawCircle(Offset(size / 2, size / 2), size / 2.0, paint1);
+    final paint1 = Paint()..color = color;
+    final paint2 = Paint()..color = Colors.white;
+
+    canvas.drawCircle(Offset(size / 2, size / 2), size / 2, paint1);
     canvas.drawCircle(Offset(size / 2, size / 2), size / 2.2, paint2);
     canvas.drawCircle(Offset(size / 2, size / 2), size / 2.4, paint1);
 
     if (text != null) {
-      TextPainter painter = TextPainter(textDirection: TextDirection.ltr);
-      painter.text = TextSpan(
-        text: text,
-        style: TextStyle(
-          fontSize: size / 3,
-          color: Colors.white,
-          fontWeight: FontWeight.normal,
-        ),
-      );
-      painter.layout();
+      final painter = TextPainter(textDirection: TextDirection.ltr)
+        ..text = TextSpan(
+          text: text,
+          style: TextStyle(fontSize: size / 3, color: Colors.white),
+        )
+        ..layout();
+
       painter.paint(
         canvas,
         Offset(size / 2 - painter.width / 2, size / 2 - painter.height / 2),
       );
     }
 
-    final img = await pictureRecorder.endRecording().toImage(size, size);
-    final data = await img.toByteData(format: ImageByteFormat.png) as ByteData;
+    final image = await recorder.endRecording().toImage(size, size);
+    final bytes = await image.toByteData(format: ImageByteFormat.png) as ByteData;
 
-    return BitmapDescriptor.bytes(data.buffer.asUint8List());
+    return BitmapDescriptor.bytes(bytes.buffer.asUint8List());
   }
 
   void _addCircle(Station station) {
     if (!_hidingZonesVisible) return;
-    if (_circles.any(
-      (cirlce) => GeoMath.distanceInMeters(cirlce.center, station.location) < 316,
-    )) {
+
+    if (_circles.any((c) => GeoMath.distanceInMeters(c.center, station.location) < 316)) {
       return;
     }
+
     _circles.add(
       Circle(
         circleId: CircleId('zone_${station.id}'),
@@ -341,6 +289,7 @@ class FeatureMarkerProvider extends ChangeNotifier {
 
   void _addPolygon(MapPOI poi, Color color) {
     if (poi.boundary == null || poi.boundary!.isEmpty) return;
+
     _polygons.add(
       Polygon(
         polygonId: PolygonId('${poi.type.name}_${poi.id}'),
@@ -352,91 +301,39 @@ class FeatureMarkerProvider extends ChangeNotifier {
     );
   }
 
+  void setOverlays(MapOverlayType type, List<MapOverlay> overlays) {
+    _overlayPolygons.removeWhere((p) => p.polygonId.value.startsWith(type.name));
+
+    for (final overlay in overlays) {
+      if (overlay.boundaryPolygons.isEmpty) continue;
+
+      _overlayPolygons.addAll(overlay.toPolygons(_onOverlayTap));
+    }
+
+    dataChanged = true;
+    notifyListeners();
+  }
+
   void setStations(List<Station> stations) {
     dataChanged = true;
     _circles.clear();
     _stationClusterManager.setItems(stations);
   }
 
-  bool get hidingZonesVisible => _hidingZonesVisible;
+  void setPOIs(POIType type, List<MapPOI> items) {
+    dataChanged = true;
+    _poiManagers[type]?.setItems(items);
+
+    if (items.isEmpty) {
+      _polygons.removeWhere((p) => p.mapsId.value.startsWith(type.name));
+    }
+  }
 
   void setHidingZonesVisible(bool value) {
     _hidingZonesVisible = value;
     dataChanged = true;
     _circles.clear();
     _stationClusterManager.updateMap();
-  }
-
-  void setThemeParks(List<MapPOI> elements) {
-    dataChanged = true;
-    _themeParkClusterManager.setItems(elements);
-    if (elements.isEmpty) {
-      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('themePark'));
-    }
-  }
-
-  void setZoos(List<MapPOI> elements) {
-    dataChanged = true;
-    _zooClusterManager.setItems(elements);
-    if (elements.isEmpty) {
-      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('zoo'));
-    }
-  }
-
-  void setAquariums(List<MapPOI> elements) {
-    dataChanged = true;
-    _aquariumClusterManager.setItems(elements);
-    if (elements.isEmpty) {
-      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('aquarium'));
-    }
-  }
-
-  void setGolfCourses(List<MapPOI> elements) {
-    dataChanged = true;
-    _golfCourseClusterManager.setItems(elements);
-    if (elements.isEmpty) {
-      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('golfCourse'));
-    }
-  }
-
-  void setMuseums(List<MapPOI> elements) {
-    dataChanged = true;
-    _museumClusterManager.setItems(elements);
-    if (elements.isEmpty) {
-      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('museum'));
-    }
-  }
-
-  void setMovieTheaters(List<MapPOI> elements) {
-    dataChanged = true;
-    _movieTheaterClusterManager.setItems(elements);
-    if (elements.isEmpty) {
-      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('movieTheater'));
-    }
-  }
-
-  void setHospitals(List<MapPOI> elements) {
-    dataChanged = true;
-    _hospitalClusterManager.setItems(elements);
-    if (elements.isEmpty) {
-      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('hospital'));
-    }
-  }
-
-  void setLibraries(List<MapPOI> elements) {
-    dataChanged = true;
-    _libraryClusterManager.setItems(elements);
-    if (elements.isEmpty) {
-      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('library'));
-    }
-  }
-
-  void setConsulates(List<MapPOI> elements) {
-    dataChanged = true;
-    _consulateClusterManager.setItems(elements);
-    if (elements.isEmpty) {
-      _polygons.removeWhere((poly) => poly.mapsId.value.startsWith('consulate'));
-    }
   }
 
   void setMapId(int mapId) {
@@ -465,40 +362,24 @@ class FeatureMarkerProvider extends ChangeNotifier {
 
   Set<Marker> get allMarkers => {
     ..._stationMarkers,
-    ..._themeParkMarkers,
-    ..._zooMarkers,
-    ..._aquariumMarkers,
-    ..._golfCourseMarkers,
-    ..._museumMarkers,
-    ..._movieTheaterMarkers,
-    ..._hospitalMarkers,
-    ..._libraryMarkers,
-    ..._consulateMarkers,
+    for (final markers in _poiMarkers.values) ...markers,
   };
 
   List<ClusterManager> get _allManagers => [
     _stationClusterManager,
-    _themeParkClusterManager,
-    _zooClusterManager,
-    _aquariumClusterManager,
-    _golfCourseClusterManager,
-    _museumClusterManager,
-    _movieTheaterClusterManager,
-    _hospitalClusterManager,
-    _libraryClusterManager,
-    _consulateClusterManager,
+    ..._poiManagers.values,
   ];
 
   void resetAll() {
     _polygons.clear();
+    _overlayPolygons.clear();
     _circles.clear();
-    for (var manager in _allManagers) {
-      if (manager == _stationClusterManager) {
-        manager.setItems(<Station>[]);
-      } else {
-        manager.setItems(<MapPOI>[]);
-      }
+    _stationClusterManager.setItems(<Station>[]);
+
+    for (final manager in _poiManagers.values) {
+      manager.setItems(<MapPOI>[]);
     }
+
     dataChanged = true;
   }
 }

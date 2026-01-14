@@ -10,11 +10,15 @@ import '../../main.dart';
 import '../models/game_state.dart';
 import '../models/map_features/map_features_controller.dart';
 import '../models/map_features/feature_marker_provider.dart';
+import '../models/map_features/map_overlay.dart';
 import '../models/play_area/play_area.dart';
 import '../models/play_area/play_area_selector_controller.dart';
+import '../models/shape/multi_polygon_shape.dart';
+import '../models/shape/serializable_polygon.dart';
 import '../models/shape/shape_factory.dart';
 import '../util/color_helper.dart';
 import '../util/location_provider.dart';
+import '../util/polygon_simplifier.dart';
 import '../widgets/import_export/import_dialog.dart';
 import '../widgets/import_export/share_dialog.dart';
 import '../widgets/map_features/map_features_panel.dart';
@@ -23,8 +27,8 @@ import '../widgets/play_area/play_area_selector.dart';
 
 import '../models/shape/shape_controller.dart';
 import '../models/shape/shape.dart';
+import '../widgets/shape/shape_actions_bottom_sheet.dart';
 import '../widgets/shape/shape_popup.dart';
-import 'settings_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -60,7 +64,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    _featureMarkerProvider = FeatureMarkerProvider(_onMarkerTap);
+    _featureMarkerProvider = FeatureMarkerProvider(_onMarkerTap, _onOverlayTap);
     _featureMarkerProvider.addListener(() {
       var isDifferent = !_featureMarkers.containsAll(_featureMarkerProvider.allMarkers);
       if (_featureMarkerProvider.dataChanged) {
@@ -142,6 +146,61 @@ class _MapScreenState extends State<MapScreen> {
     _onMapTap(position);
   }
 
+  void _onOverlayTap(MapOverlay overlay) {
+    if (_isBottomSheetOpen) return;
+    if (_activeShapeController != null) return;
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return PointerInterceptor(
+          child: AlertDialog(
+            title: const Text('Create Polygon'),
+            content: Text(
+              'Do you want to add ${overlay.name} ${overlay.nameEn != null ? '(${overlay.nameEn})' : ""} as a polygon?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _createPolygonFromOverlay(overlay);
+                },
+                child: const Text('Create'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _createPolygonFromOverlay(MapOverlay overlay) {
+    var shape =
+        ShapeFactory.createShape(ShapeType.multiPolygon, gameState.playArea!)
+            as MultiPolygonShape;
+    shape.name = overlay.name;
+    shape.polygons = overlay.boundaryPolygons
+        .map(
+          (bp) => SerializablePolygon(
+            outer: PolygonSimplifier.simplify(
+              bp.outer,
+              toleranceMeters: overlay.toleranceMeters(),
+            ),
+            holes: bp.holes
+                .map((h) => PolygonSimplifier.simplify(h, toleranceMeters: 5))
+                .toList(),
+          ),
+        )
+        .toList();
+    setState(() {
+      _activeShapeController = ShapeController(shape);
+    });
+  }
+
   void _onMapTap(LatLng point) {
     if (gameState.playArea == null) {
       _selectorController.onMapTap(point);
@@ -151,7 +210,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onShapeTapped(String id) {
-    if (_isBottomSheetOpen) return; // <-- Prevent opening multiple sheets
+    if (_isBottomSheetOpen) return;
     _isBottomSheetOpen = true;
 
     final shape = gameState.shapes.firstWhere((s) => s.id == id);
@@ -159,40 +218,17 @@ class _MapScreenState extends State<MapScreen> {
     showModalBottomSheet(
       context: context,
       builder: (_) {
-        return SafeArea(
-          child: PointerInterceptor(
-            child: Wrap(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.edit),
-                  title: const Text('Edit'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _editShape(shape);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.share),
-                  title: const Text('Share'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    shape.share();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.delete),
-                  title: const Text('Remove'),
-                  onTap: () {
-                    setState(() {
-                      gameState.shapes.removeWhere((s) => s.id == id);
-                    });
-                    GameState.saveGameState(gameState);
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
-          ),
+        return ShapeActionsBottomSheet(
+          shape: shape,
+          onEdit: () {
+            _editShape(shape);
+          },
+          onDelete: () {
+            setState(() {
+              gameState.shapes.removeWhere((s) => s.id == id);
+            });
+            GameState.saveGameState(gameState);
+          },
         );
       },
     ).whenComplete(() {
@@ -231,10 +267,7 @@ class _MapScreenState extends State<MapScreen> {
               onSelected: (value) async {
                 switch (value) {
                   case 'settings':
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                    );
+                    Navigator.of(context).pushNamed('/settings');
                     break;
                   case 'import':
                     showDialog<String>(
@@ -356,6 +389,14 @@ class _MapScreenState extends State<MapScreen> {
                     child: const Icon(Icons.change_history),
                   ),
                 ),
+                PointerInterceptor(
+                  child: FloatingActionButton(
+                    heroTag: 'fab_add_timer',
+                    onPressed: () => _openAddShape(ShapeType.timer),
+                    tooltip: 'Add Timer',
+                    child: const Icon(Icons.timer_outlined),
+                  ),
+                ),
               ],
             )
           : null,
@@ -388,7 +429,8 @@ class _MapScreenState extends State<MapScreen> {
 
                   if (obj.circle != null) circlesToShow.add(obj.circle!);
                   if (obj.polyline != null) polylinesToShow.add(obj.polyline!);
-                  if (obj.polygon != null) polygonsToShow.add(obj.polygon!);
+                  if (obj.polygons.isNotEmpty) polygonsToShow.addAll(obj.polygons);
+                  if (obj.marker != null) markersToShow.add(obj.marker!);
                 }
 
                 if (_activeShapeController != null) {
@@ -397,14 +439,20 @@ class _MapScreenState extends State<MapScreen> {
                   );
                   if (preview.circle != null) circlesToShow.add(preview.circle!);
                   if (preview.polyline != null) polylinesToShow.add(preview.polyline!);
-                  if (preview.polygon != null) polygonsToShow.add(preview.polygon!);
+                  if (preview.polygons.isNotEmpty) {
+                    polygonsToShow.addAll(preview.polygons);
+                  }
 
                   markersToShow.addAll(_activeShapeController!.getMarkers());
                 }
               }
 
               markersToShow.addAll(_featureMarkers);
-              polygonsToShow.addAll(_featurePolygons);
+              polygonsToShow.addAll(
+                _featurePolygons.map(
+                  (e) => e.copyWith(consumeTapEventsParam: _isEditable()),
+                ),
+              );
               circlesToShow.addAll(_featureCircles);
 
               if (kIsWeb && _locationForWeb != null) {
@@ -517,6 +565,7 @@ class _MapScreenState extends State<MapScreen> {
           setState(() {
             gameState.shapes.add(shape);
           });
+          GameState.saveGameState(gameState);
         } catch (e) {
           ScaffoldMessenger.of(
             context,

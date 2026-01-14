@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../main.dart';
 import '../util/app_preferences.dart';
 import '../util/geo_math.dart';
 
+class SettingsRouteArgs {
+  final bool openAdvanced;
+
+  const SettingsRouteArgs({this.openAdvanced = false});
+}
+
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final bool openAdvanced;
+
+  const SettingsScreen({super.key, this.openAdvanced = false});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -21,6 +30,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   late double _iconSizePx;
   late double _originalIconSizePx;
+
+  late List<int> _adminLevels;
+  late List<int> _originalAdminLevels;
+  bool _advancedExpanded = false;
+  final _advancedKey = GlobalKey();
 
   @override
   void initState() {
@@ -40,6 +54,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     _zoneController = TextEditingController(text: displayValue.toStringAsFixed(2));
     _selectedPreset = _getMatchingPreset(displayValue);
+
+    _adminLevels = List<int>.from(prefs.adminLevels);
+    _originalAdminLevels = List<int>.from(_adminLevels);
+    _advancedExpanded = widget.openAdvanced;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.openAdvanced && _advancedKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _advancedKey.currentContext!,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   String _getMatchingPreset(double value) {
@@ -71,6 +99,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await prefs.setLengthSystem(_lengthSystem);
       await prefs.setHidingZoneSize(meters);
       await prefs.setIconSize(Size(_iconSizePx, _iconSizePx));
+      await prefs.setAdminLevel(1, _adminLevels[0]);
+      await prefs.setAdminLevel(2, _adminLevels[1]);
+      await prefs.setAdminLevel(3, _adminLevels[2]);
+      await prefs.setAdminLevel(4, _adminLevels[3]);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -84,6 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _originalSystem = _lengthSystem;
       _originalZoneMeters = meters;
       _originalIconSizePx = _iconSizePx;
+      _originalAdminLevels = List<int>.from(_adminLevels);
     }
   }
 
@@ -94,7 +127,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
     return _lengthSystem != _originalSystem ||
         (currentMeters - _originalZoneMeters).abs() > 0.001 ||
-        (_iconSizePx - _originalIconSizePx).abs() > 0.01;
+        (_iconSizePx - _originalIconSizePx).abs() > 0.01 ||
+        !_adminLevels.asMap().entries.every(
+          (e) => e.value == _originalAdminLevels[e.key],
+        );
   }
 
   Future<bool> _confirmDiscardChanges() async {
@@ -414,6 +450,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
 
+              const SizedBox(height: 8),
+
+              ExpansionTile(
+                key: _advancedKey,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                initiallyExpanded: _advancedExpanded,
+                onExpansionChanged: (v) => _advancedExpanded = v,
+                title: Row(
+                  children: [
+                    Expanded(child: Divider(thickness: 1, color: theme.dividerColor)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Advanced Settings',
+                      style: theme.textTheme.labelLarge!.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(child: Divider(thickness: 1, color: theme.dividerColor)),
+                  ],
+                ),
+                children: [_buildAdminLevelsSection(theme)],
+              ),
+
               const SizedBox(height: 80),
             ],
           ),
@@ -436,6 +499,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAdminLevelsSection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Administrative Division Levels',
+          style: theme.textTheme.titleSmall!.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        RichText(
+          text: TextSpan(
+            style: theme.textTheme.bodySmall!.copyWith(color: Colors.grey[600]),
+            children: [
+              const TextSpan(
+                text:
+                    'Controls which admin_level values are used when fetching borders.\n',
+              ),
+              const TextSpan(text: 'See '),
+              WidgetSpan(
+                alignment: PlaceholderAlignment.baseline,
+                baseline: TextBaseline.alphabetic,
+                child: GestureDetector(
+                  onTap: () async {
+                    const url =
+                        'https://wiki.openstreetmap.org/wiki/Tag:boundary%3Dadministrative#Country_specific_values_of_the_key_admin_level=*';
+                    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                  },
+                  child: Text(
+                    'OpenStreetMap admin_level reference',
+                    style: theme.textTheme.bodySmall!.copyWith(
+                      color: theme.colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ),
+              const TextSpan(text: ' to choose valid values for your country.'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        for (int i = 0; i < 4; i++) _buildAdminLevelRow(i),
+      ],
+    );
+  }
+
+  Widget _buildAdminLevelRow(int index) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0),
+      child: Row(
+        children: [
+          Expanded(child: Text('Admin Level ${index + 1}')),
+          DropdownButton<int>(
+            value: _adminLevels[index],
+            items: [
+              for (int i = 3; i <= 11; i++)
+                DropdownMenuItem(value: i, child: Text('Level $i')),
+            ],
+            onChanged: (v) {
+              if (v != null) {
+                setState(() => _adminLevels[index] = v);
+              }
+            },
+          ),
+        ],
       ),
     );
   }
