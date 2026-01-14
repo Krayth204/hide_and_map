@@ -329,7 +329,23 @@ class MapFeaturesPanel extends StatelessWidget {
             children: [
               const Icon(Icons.border_outer, color: Colors.brown),
               const SizedBox(width: 12),
-              Expanded(child: Text('Borders', style: theme.textTheme.titleMedium)),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'experimental',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontSize: 10,
+                        color: Colors.orange.shade700,
+                      ),
+                    ),
+                    Text('Borders', style: theme.textTheme.titleMedium),
+                  ],
+                ),
+              ),
+
               controller.isFetchingOverlays
                   ? const Padding(
                       padding: EdgeInsets.only(right: 14),
