@@ -29,7 +29,6 @@ import '../models/shape/shape_controller.dart';
 import '../models/shape/shape.dart';
 import '../widgets/shape/shape_actions_bottom_sheet.dart';
 import '../widgets/shape/shape_popup.dart';
-import 'settings_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -157,7 +156,9 @@ class _MapScreenState extends State<MapScreen> {
         return PointerInterceptor(
           child: AlertDialog(
             title: const Text('Create Polygon'),
-            content: Text('Do you want to add "${overlay.name}" as a polygon?'),
+            content: Text(
+              'Do you want to add ${overlay.name} ${overlay.nameEn != null ? '(${overlay.nameEn})' : ""} as a polygon?',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -185,8 +186,13 @@ class _MapScreenState extends State<MapScreen> {
     shape.polygons = overlay.boundaryPolygons
         .map(
           (bp) => SerializablePolygon(
-            outer: PolygonSimplifier.simplify(bp.outer, toleranceMeters: overlay.toleranceMeters()),
-            holes: bp.holes.map((h) => PolygonSimplifier.simplify(h, toleranceMeters: 5)).toList(),
+            outer: PolygonSimplifier.simplify(
+              bp.outer,
+              toleranceMeters: overlay.toleranceMeters(),
+            ),
+            holes: bp.holes
+                .map((h) => PolygonSimplifier.simplify(h, toleranceMeters: 5))
+                .toList(),
           ),
         )
         .toList();
@@ -261,10 +267,7 @@ class _MapScreenState extends State<MapScreen> {
               onSelected: (value) async {
                 switch (value) {
                   case 'settings':
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                    );
+                    Navigator.of(context).pushNamed('/settings');
                     break;
                   case 'import':
                     showDialog<String>(
@@ -436,15 +439,20 @@ class _MapScreenState extends State<MapScreen> {
                   );
                   if (preview.circle != null) circlesToShow.add(preview.circle!);
                   if (preview.polyline != null) polylinesToShow.add(preview.polyline!);
-                  if (preview.polygons.isNotEmpty)
+                  if (preview.polygons.isNotEmpty) {
                     polygonsToShow.addAll(preview.polygons);
+                  }
 
                   markersToShow.addAll(_activeShapeController!.getMarkers());
                 }
               }
 
               markersToShow.addAll(_featureMarkers);
-              polygonsToShow.addAll(_featurePolygons);
+              polygonsToShow.addAll(
+                _featurePolygons.map(
+                  (e) => e.copyWith(consumeTapEventsParam: _isEditable()),
+                ),
+              );
               circlesToShow.addAll(_featureCircles);
 
               if (kIsWeb && _locationForWeb != null) {

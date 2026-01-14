@@ -107,36 +107,12 @@ class FeatureFetcher {
     );
   }
 
-  static Future<List<MapOverlay>> fetchBorderInternational(List<LatLng> boundary) =>
+  static Future<List<MapOverlay>> fetchBorderLevel(MapOverlayType type, int level, List<LatLng> boundary) =>
       _fetchOverlays(
         boundary,
-        'rel["boundary"="administrative"]["admin_level"="2"]["name"]',
-        MapOverlayType.borderInter,
+        'rel["boundary"="administrative"]["admin_level"="$level"]["name"]',
+        type,
       );
-
-  static Future<List<MapOverlay>> fetchBorder1AD(List<LatLng> boundary) => _fetchOverlays(
-    boundary,
-    'rel["boundary"="administrative"]["admin_level"="4"]["name"]',
-    MapOverlayType.border1AD,
-  );
-
-  static Future<List<MapOverlay>> fetchBorder2AD(List<LatLng> boundary) => _fetchOverlays(
-    boundary,
-    'rel["boundary"="administrative"]["admin_level"="6"]["name"]',
-    MapOverlayType.border2AD,
-  );
-
-  static Future<List<MapOverlay>> fetchBorder3AD(List<LatLng> boundary) => _fetchOverlays(
-    boundary,
-    'rel["boundary"="administrative"]["admin_level"="8"]["name"]',
-    MapOverlayType.border3AD,
-  );
-
-  static Future<List<MapOverlay>> fetchBorder4AD(List<LatLng> boundary) => _fetchOverlays(
-    boundary,
-    'rel["boundary"="administrative"]["admin_level"="9"]["name"]',
-    MapOverlayType.border4AD,
-  );
 
   static Future<List<MapPOI>> _fetchPOIs(
     List<LatLng> boundary,

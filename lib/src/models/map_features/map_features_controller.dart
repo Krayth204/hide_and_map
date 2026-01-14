@@ -61,6 +61,8 @@ class MapFeaturesController extends ChangeNotifier {
 
   Map<MapOverlayType, bool> _previousOverlayVisibility = {};
 
+  final _overlayLevels = List<int>.from(prefs.adminLevels);
+
   final Map<POIType, PoiState> _poiStates = {
     POIType.themePark: PoiState(),
     POIType.zoo: PoiState(),
@@ -73,7 +75,20 @@ class MapFeaturesController extends ChangeNotifier {
     POIType.consulate: PoiState(),
   };
 
-  MapFeaturesController(this._featureMarkerProvider);
+  MapFeaturesController(this._featureMarkerProvider) {
+    prefs.addListener(() {
+      for (var i = 0; i < _overlayLevels.length; i++) {
+        if (_overlayLevels[i] != prefs.adminLevels[i]) {
+          _overlayLevels[i] = prefs.adminLevels[i];
+          final state = _overlayStates[MapOverlayType.values[i + 1]]!;
+          state.data = [];
+          state.fetched = false;
+          state.fetching = false;
+          if (state.visible) toggleOverlay(MapOverlayType.values[i + 1], true);
+        }
+      }
+    });
+  }
 
   bool get showTrainStations => _stationStates[StationType.trainStation]!.visible;
   bool get showTrainStops => _stationStates[StationType.trainStop]!.visible;
@@ -296,11 +311,27 @@ class MapFeaturesController extends ChangeNotifier {
     MapOverlayType type,
   ) {
     return switch (type) {
-      MapOverlayType.borderInter => FeatureFetcher.fetchBorderInternational,
-      MapOverlayType.border1AD => FeatureFetcher.fetchBorder1AD,
-      MapOverlayType.border2AD => FeatureFetcher.fetchBorder2AD,
-      MapOverlayType.border3AD => FeatureFetcher.fetchBorder3AD,
-      MapOverlayType.border4AD => FeatureFetcher.fetchBorder4AD,
+      MapOverlayType.borderInter => (b) => FeatureFetcher.fetchBorderLevel(type, 2, b),
+      MapOverlayType.border1AD => (b) => FeatureFetcher.fetchBorderLevel(
+        type,
+        _overlayLevels[0],
+        b,
+      ),
+      MapOverlayType.border2AD => (b) => FeatureFetcher.fetchBorderLevel(
+        type,
+        _overlayLevels[1],
+        b,
+      ),
+      MapOverlayType.border3AD => (b) => FeatureFetcher.fetchBorderLevel(
+        type,
+        _overlayLevels[2],
+        b,
+      ),
+      MapOverlayType.border4AD => (b) => FeatureFetcher.fetchBorderLevel(
+        type,
+        _overlayLevels[3],
+        b,
+      ),
     };
   }
 

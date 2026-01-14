@@ -4,6 +4,7 @@ import '../../models/map_features/map_features_controller.dart';
 import '../../models/map_features/map_poi.dart';
 import '../../models/map_features/map_overlay.dart';
 import '../../models/map_features/station.dart';
+import '../../screens/settings_screen.dart';
 
 class MapFeaturesPanel extends StatelessWidget {
   final MapFeaturesController controller;
@@ -36,7 +37,7 @@ class MapFeaturesPanel extends StatelessWidget {
 
                   const Divider(height: 24, thickness: 1),
 
-                  _buildBordersTile(theme),
+                  _buildBordersTile(context, theme),
 
                   const Divider(height: 24, thickness: 1),
 
@@ -314,7 +315,7 @@ class MapFeaturesPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildBordersTile(ThemeData theme) {
+  Widget _buildBordersTile(BuildContext context, ThemeData theme) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -377,6 +378,21 @@ class MapFeaturesPanel extends StatelessWidget {
               value: controller.showBorder4AD,
               isLoading: controller.isFetchingBorder4ADs,
               onChanged: (v) => controller.toggleOverlay(MapOverlayType.border4AD, v),
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushNamed(
+                  '/settings',
+                  arguments: const SettingsRouteArgs(openAdvanced: true),
+                );
+              },
+              child: Text(
+                'Adjust division levels →',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.primary,
+                ),
+              ),
             ),
           ],
         ),
