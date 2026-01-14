@@ -4,10 +4,18 @@ import '../../../main.dart';
 import 'feature_fetcher.dart';
 import 'feature_marker_provider.dart';
 import 'station.dart';
+import 'map_overlay.dart';
 import 'map_poi.dart';
 
 class StationState {
   List<Station> data = [];
+  bool fetched = false;
+  bool fetching = false;
+  bool visible = false;
+}
+
+class OverlayState {
+  List<MapOverlay> data = [];
   bool fetched = false;
   bool fetching = false;
   bool visible = false;
@@ -43,6 +51,18 @@ class MapFeaturesController extends ChangeNotifier {
 
   Map<StationType, bool> _previousStationVisibility = {};
 
+  final Map<MapOverlayType, OverlayState> _overlayStates = {
+    MapOverlayType.borderInter: OverlayState(),
+    MapOverlayType.border1AD: OverlayState(),
+    MapOverlayType.border2AD: OverlayState(),
+    MapOverlayType.border3AD: OverlayState(),
+    MapOverlayType.border4AD: OverlayState(),
+  };
+
+  Map<MapOverlayType, bool> _previousOverlayVisibility = {};
+
+  final _overlayLevels = List<int>.from(prefs.adminLevels);
+
   final Map<POIType, PoiState> _poiStates = {
     POIType.themePark: PoiState(),
     POIType.zoo: PoiState(),
@@ -55,7 +75,20 @@ class MapFeaturesController extends ChangeNotifier {
     POIType.consulate: PoiState(),
   };
 
-  MapFeaturesController(this._featureMarkerProvider);
+  MapFeaturesController(this._featureMarkerProvider) {
+    prefs.addListener(() {
+      for (var i = 0; i < _overlayLevels.length; i++) {
+        if (_overlayLevels[i] != prefs.adminLevels[i]) {
+          _overlayLevels[i] = prefs.adminLevels[i];
+          final state = _overlayStates[MapOverlayType.values[i + 1]]!;
+          state.data = [];
+          state.fetched = false;
+          state.fetching = false;
+          if (state.visible) toggleOverlay(MapOverlayType.values[i + 1], true);
+        }
+      }
+    });
+  }
 
   bool get showTrainStations => _stationStates[StationType.trainStation]!.visible;
   bool get showTrainStops => _stationStates[StationType.trainStop]!.visible;
@@ -64,6 +97,13 @@ class MapFeaturesController extends ChangeNotifier {
   bool get showBusStops => _stationStates[StationType.bus]!.visible;
   bool get showFerryStops => _stationStates[StationType.ferry]!.visible;
   bool get showHidingZones => _featureMarkerProvider.hidingZonesVisible;
+
+  bool get showBorderInternational => _overlayStates[MapOverlayType.borderInter]!.visible;
+  bool get showBorder1AD => _overlayStates[MapOverlayType.border1AD]!.visible;
+  bool get showBorder2AD => _overlayStates[MapOverlayType.border2AD]!.visible;
+  bool get showBorder3AD => _overlayStates[MapOverlayType.border3AD]!.visible;
+  bool get showBorder4AD => _overlayStates[MapOverlayType.border4AD]!.visible;
+
   bool get showThemeParks => _poiStates[POIType.themePark]!.visible;
   bool get showZoos => _poiStates[POIType.zoo]!.visible;
   bool get showAquariums => _poiStates[POIType.aquarium]!.visible;
@@ -74,31 +114,16 @@ class MapFeaturesController extends ChangeNotifier {
   bool get showLibraries => _poiStates[POIType.library]!.visible;
   bool get showConsulates => _poiStates[POIType.consulate]!.visible;
 
-  List<Station> get stations {
-    final visibleLists = _stationStates.entries
-        .where((e) => e.value.visible)
-        .expand((e) => e.value.data)
-        .toList();
-    return visibleLists;
-  }
+  List<Station> get stations =>
+      _stationStates.values.where((s) => s.visible).expand((s) => s.data).toList();
 
   bool get anyStationTypeVisible => _stationStates.values.any((state) => state.visible);
 
   bool get isFetchingStations => _stationStates.values.any((state) => state.fetching);
 
-  List<MapPOI> get themeParks => _getPoiList(POIType.themePark);
-  List<MapPOI> get zoos => _getPoiList(POIType.zoo);
-  List<MapPOI> get aquariums => _getPoiList(POIType.aquarium);
-  List<MapPOI> get golfCourses => _getPoiList(POIType.golfCourse);
-  List<MapPOI> get museums => _getPoiList(POIType.museum);
-  List<MapPOI> get movieTheaters => _getPoiList(POIType.movieTheater);
-  List<MapPOI> get hospitals => _getPoiList(POIType.hospital);
-  List<MapPOI> get libraries => _getPoiList(POIType.library);
-  List<MapPOI> get consulates => _getPoiList(POIType.consulate);
+  bool get anyOverlayTypeVisible => _overlayStates.values.any((state) => state.visible);
 
-  List<MapPOI> _getPoiList(POIType type) {
-    return _poiStates[type]!.visible ? _poiStates[type]!.data : <MapPOI>[];
-  }
+  bool get isFetchingOverlays => _overlayStates.values.any((state) => state.fetching);
 
   bool get isFetchingTrainStations => _stationStates[StationType.trainStation]!.fetching;
   bool get isFetchingTrainStops => _stationStates[StationType.trainStop]!.fetching;
@@ -106,6 +131,11 @@ class MapFeaturesController extends ChangeNotifier {
   bool get isFetchingTramStops => _stationStates[StationType.tram]!.fetching;
   bool get isFetchingBusStops => _stationStates[StationType.bus]!.fetching;
   bool get isFetchingFerryStops => _stationStates[StationType.ferry]!.fetching;
+  bool get isFetchingBorderInters => _overlayStates[MapOverlayType.borderInter]!.fetching;
+  bool get isFetchingBorder1ADs => _overlayStates[MapOverlayType.border1AD]!.fetching;
+  bool get isFetchingBorder2ADs => _overlayStates[MapOverlayType.border2AD]!.fetching;
+  bool get isFetchingBorder3ADs => _overlayStates[MapOverlayType.border3AD]!.fetching;
+  bool get isFetchingBorder4ADs => _overlayStates[MapOverlayType.border4AD]!.fetching;
   bool get isFetchingThemeParks => _poiStates[POIType.themePark]!.fetching;
   bool get isFetchingZoos => _poiStates[POIType.zoo]!.fetching;
   bool get isFetchingAquariums => _poiStates[POIType.aquarium]!.fetching;
@@ -124,7 +154,7 @@ class MapFeaturesController extends ChangeNotifier {
       for (var state in _stationStates.values) {
         state.visible = false;
       }
-      _setFeatureMarkerProviderStations();
+      _featureMarkerProvider.setStations([]);
       notifyListeners();
       return;
     }
@@ -134,45 +164,20 @@ class MapFeaturesController extends ChangeNotifier {
         _stationStates[entry.key]!.visible = entry.value;
       }
     } else {
-      for (var k in _stationStates.keys) {
-        _stationStates[k]!.visible = k == StationType.trainStation;
-      }
+      _stationStates[StationType.trainStation]!.visible = true;
     }
 
-    final toFetch = _stationStates.entries
-        .where((e) => e.value.visible)
-        .map((e) => _fetchStationIfNeeded(e.key));
-    await Future.wait(toFetch);
+    await Future.wait(
+      _stationStates.entries
+          .where((e) => e.value.visible)
+          .map((e) => _fetchStationIfNeeded(e.key)),
+    );
 
-    _setFeatureMarkerProviderStations();
+    _featureMarkerProvider.setStations(stations);
     notifyListeners();
   }
 
-  void toggleTrainStations(bool value) async {
-    await _toggleStationType(StationType.trainStation, value);
-  }
-
-  void toggleTrainStops(bool value) async {
-    await _toggleStationType(StationType.trainStop, value);
-  }
-
-  void toggleSubwayStations(bool value) async {
-    await _toggleStationType(StationType.subway, value);
-  }
-
-  void toggleTramStops(bool value) async {
-    await _toggleStationType(StationType.tram, value);
-  }
-
-  void toggleBusStops(bool value) async {
-    await _toggleStationType(StationType.bus, value);
-  }
-
-  void toggleFerryStops(bool value) async {
-    await _toggleStationType(StationType.ferry, value);
-  }
-
-  Future<void> _toggleStationType(StationType type, bool value) async {
+  Future<void> toggleStationType(StationType type, bool value) async {
     final state = _stationStates[type]!;
     state.visible = value;
 
@@ -180,7 +185,7 @@ class MapFeaturesController extends ChangeNotifier {
       await _fetchStationIfNeeded(type);
     }
 
-    _setFeatureMarkerProviderStations();
+    _featureMarkerProvider.setStations(stations);
     notifyListeners();
   }
 
@@ -221,25 +226,124 @@ class MapFeaturesController extends ChangeNotifier {
     };
   }
 
-  void _setFeatureMarkerProviderStations() {
-    final combined = _stationStates.values
-        .where((s) => s.visible)
-        .expand((s) => s.data)
-        .toList();
-    _featureMarkerProvider.setStations(combined);
-  }
-
   void toggleHidingZones(bool value) async {
     _featureMarkerProvider.setHidingZonesVisible(value);
     notifyListeners();
   }
 
+  void toggleOverlays(bool value) async {
+    if (!value) {
+      _previousOverlayVisibility = {
+        for (var k in _overlayStates.keys) k: _overlayStates[k]!.visible,
+      };
+
+      for (var state in _overlayStates.values) {
+        state.visible = false;
+      }
+
+      for (final type in _overlayStates.keys) {
+        _featureMarkerProvider.setOverlays(type, []);
+      }
+
+      notifyListeners();
+      return;
+    }
+
+    if (_previousOverlayVisibility.isNotEmpty) {
+      for (var entry in _previousOverlayVisibility.entries) {
+        _overlayStates[entry.key]!.visible = entry.value;
+      }
+    } else {
+      _overlayStates[MapOverlayType.borderInter]!.visible = true;
+    }
+
+    await Future.wait(
+      _overlayStates.entries
+          .where((e) => e.value.visible)
+          .map((e) => _fetchOverlayIfNeeded(e.key)),
+    );
+
+    for (final entry in _overlayStates.entries) {
+      _featureMarkerProvider.setOverlays(
+        entry.key,
+        entry.value.visible ? entry.value.data : [],
+      );
+    }
+
+    notifyListeners();
+  }
+
+  void toggleOverlay(MapOverlayType type, bool value) async {
+    final state = _overlayStates[type]!;
+    state.visible = value;
+
+    if (value) {
+      await _fetchOverlayIfNeeded(type);
+    }
+
+    _featureMarkerProvider.setOverlays(type, state.visible ? state.data : []);
+    notifyListeners();
+  }
+
+  Future<void> _fetchOverlayIfNeeded(MapOverlayType type) async {
+    final state = _overlayStates[type]!;
+    if (state.fetched || state.fetching) return;
+
+    state.fetching = true;
+    notifyListeners();
+
+    try {
+      state.data = await _getOverlayFetchFunction(type)(_playAreaBoundary);
+      state.fetched = true;
+    } catch (e) {
+      debugPrint('Error fetching ${type.name}: $e');
+      rootScaffoldMessengerKey.currentState?.showSnackBar(
+        const SnackBar(content: Text("Fetching borders failed! Please try again!")),
+      );
+      state.visible = false;
+    } finally {
+      state.fetching = false;
+      notifyListeners();
+    }
+  }
+
+  Future<List<MapOverlay>> Function(List<LatLng>) _getOverlayFetchFunction(
+    MapOverlayType type,
+  ) {
+    return switch (type) {
+      MapOverlayType.borderInter => (b) => FeatureFetcher.fetchBorderLevel(type, 2, b),
+      MapOverlayType.border1AD => (b) => FeatureFetcher.fetchBorderLevel(
+        type,
+        _overlayLevels[0],
+        b,
+      ),
+      MapOverlayType.border2AD => (b) => FeatureFetcher.fetchBorderLevel(
+        type,
+        _overlayLevels[1],
+        b,
+      ),
+      MapOverlayType.border3AD => (b) => FeatureFetcher.fetchBorderLevel(
+        type,
+        _overlayLevels[2],
+        b,
+      ),
+      MapOverlayType.border4AD => (b) => FeatureFetcher.fetchBorderLevel(
+        type,
+        _overlayLevels[3],
+        b,
+      ),
+    };
+  }
+
   void togglePoi(POIType type, bool value) async {
-    _poiStates[type]!.visible = value;
+    final state = _poiStates[type]!;
+    state.visible = value;
 
-    await _fetchPoiIfNeeded(type);
-    _updateFeatureMarkerProvider(type);
+    if (value) {
+      await _fetchPoiIfNeeded(type);
+    }
 
+    _featureMarkerProvider.setPOIs(type, state.visible ? state.data : []);
     notifyListeners();
   }
 
@@ -251,7 +355,7 @@ class MapFeaturesController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      state.data = await _getFetchFunction(type)(_playAreaBoundary);
+      state.data = await _getPoiFetchFunction(type)(_playAreaBoundary);
       state.fetched = true;
     } catch (e) {
       debugPrint('Error fetching ${type.name}: $e');
@@ -265,7 +369,7 @@ class MapFeaturesController extends ChangeNotifier {
     }
   }
 
-  Future<List<MapPOI>> Function(List<LatLng>) _getFetchFunction(POIType type) {
+  Future<List<MapPOI>> Function(List<LatLng>) _getPoiFetchFunction(POIType type) {
     return switch (type) {
       POIType.themePark => FeatureFetcher.fetchThemeParks,
       POIType.zoo => FeatureFetcher.fetchZoos,
@@ -277,30 +381,6 @@ class MapFeaturesController extends ChangeNotifier {
       POIType.library => FeatureFetcher.fetchLibraries,
       POIType.consulate => FeatureFetcher.fetchConsulates,
     };
-  }
-
-  void _updateFeatureMarkerProvider(POIType type) {
-    final data = _getPoiList(type);
-    switch (type) {
-      case POIType.themePark:
-        _featureMarkerProvider.setThemeParks(data);
-      case POIType.zoo:
-        _featureMarkerProvider.setZoos(data);
-      case POIType.aquarium:
-        _featureMarkerProvider.setAquariums(data);
-      case POIType.golfCourse:
-        _featureMarkerProvider.setGolfCourses(data);
-      case POIType.museum:
-        _featureMarkerProvider.setMuseums(data);
-      case POIType.movieTheater:
-        _featureMarkerProvider.setMovieTheaters(data);
-      case POIType.hospital:
-        _featureMarkerProvider.setHospitals(data);
-      case POIType.library:
-        _featureMarkerProvider.setLibraries(data);
-      case POIType.consulate:
-        _featureMarkerProvider.setConsulates(data);
-    }
   }
 
   void setPlayAreaBoundary(List<LatLng> newBoundary) {
@@ -325,6 +405,14 @@ class MapFeaturesController extends ChangeNotifier {
     for (var state in _poiStates.values) {
       state.data = [];
       state.fetched = false;
+      state.fetching = false;
+      state.visible = false;
+    }
+
+    for (var state in _overlayStates.values) {
+      state.data = [];
+      state.fetched = false;
+      state.fetching = false;
       state.visible = false;
     }
 

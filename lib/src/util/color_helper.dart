@@ -30,7 +30,7 @@ abstract class ColorHelper {
   }
 
   static MaterialColor copyMaterialColor(MaterialColor color) {
-    return MaterialColor(color.value, {
+    return MaterialColor(color.toARGB32(), {
       50: color[50]!,
       100: color[100]!,
       200: color[200]!,
@@ -59,7 +59,7 @@ abstract class ColorHelper {
 
   static MaterialColor resolveMaterialColor(int value) {
     return availableColors.firstWhere(
-      (c) => c.value == value,
+      (c) => c.toARGB32() == value,
       orElse: () => Colors.blue,
     );
   }

@@ -12,13 +12,14 @@ class PolygonPlayArea extends PlayArea {
 
   @override
   LatLng getCenter() {
+    double round(double v) => double.parse(v.toStringAsFixed(5));
     double sumLat = 0;
     double sumLng = 0;
     for (var v in vertices) {
       sumLat += v.latitude;
       sumLng += v.longitude;
     }
-    return LatLng(sumLat / vertices.length, sumLng / vertices.length);
+    return LatLng(round(sumLat / vertices.length), round(sumLng / vertices.length));
   }
 
   @override

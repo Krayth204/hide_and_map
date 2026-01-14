@@ -43,8 +43,8 @@ class CircleShape extends Shape {
   }
 
   @override
-  double getDistance() {
-    return radius;
+  String getDistance() {
+    return GeoMath.toDistanceString(radius);
   }
 
   @override
@@ -56,16 +56,18 @@ class CircleShape extends Shape {
   }) {
     if (inverted) {
       return ShapeObject(
-        polygon: Polygon(
-          polygonId: PolygonId(customId ?? id),
-          points: playArea.getBoundary(),
-          holes: [GeoMath.pointsOfCircle(center, radius)],
-          strokeColor: color.shade700,
-          strokeWidth: 2,
-          fillColor: color.withAlpha(115),
-          consumeTapEvents: editable,
-          onTap: () => editable ? onTap?.call(id) : null,
-        ),
+        polygons: [
+          Polygon(
+            polygonId: PolygonId(customId ?? id),
+            points: playArea.getBoundary(),
+            holes: [GeoMath.pointsOfCircle(center, radius)],
+            strokeColor: color.shade700,
+            strokeWidth: 2,
+            fillColor: color.withAlpha(115),
+            consumeTapEvents: editable,
+            onTap: () => editable ? onTap?.call(id) : null,
+          ),
+        ],
       );
     } else {
       return ShapeObject(
@@ -104,7 +106,7 @@ class CircleShape extends Shape {
     return {
       'id': id,
       'ty': 'c',
-      'col': color.value,
+      'col': color.toARGB32(),
       'sce': {'lat': center.latitude, 'lng': center.longitude},
       'sra': radius,
       'i': inverted ? 't' : 'f',
